@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Task Completion Auto-Push",
+  "description": "Monitors tasks.md for task completions and automatically pushes changes to the main branch with appropriate commit messages describing what was accomplished",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "tasks.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A task has been completed in tasks.md. Please review the changes to identify what task was completed, then create an appropriate git commit message and push the changes to the main branch. The commit message should clearly describe what was accomplished based on the task that was marked as done."
+  }
+}
