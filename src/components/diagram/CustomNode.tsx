@@ -2,6 +2,8 @@ import React from "react";
 import { Handle, Position } from "reactflow";
 import type { NodeProps } from "reactflow";
 import type { VisualNode } from "../../types/visualization";
+import { Tooltip } from "../ui/Tooltip";
+import { ExplanationService } from "../../services/ExplanationService";
 
 /**
  * Data passed to the custom node component
@@ -43,67 +45,71 @@ export const CustomNode: React.FC<NodeProps<CustomNodeData>> = ({
       }
     : {};
 
+  // Get child-friendly explanation
+  const nodeExplanation = ExplanationService.getNodeExplanation(visualNode);
+  const tooltipText = ExplanationService.getTooltipText(nodeExplanation);
+
   return (
-    <button
-      className="relative cursor-pointer transition-all duration-200 hover:shadow-md group border-0 p-0 bg-transparent"
-      style={{
-        ...nodeStyle,
-        ...selectedStyle,
-        border: `${
-          selectedStyle.borderWidth || nodeStyle.borderWidth
-        }px solid ${selectedStyle.borderColor || nodeStyle.borderColor}`,
-        borderRadius: `${nodeStyle.borderRadius}px`,
-        width: `${nodeStyle.width}px`,
-        height: `${nodeStyle.height}px`,
-        boxShadow: selectedStyle.boxShadow || "0 2px 4px rgba(0, 0, 0, 0.1)",
-      }}
-      onClick={handleClick}
-      title={explanation}
-      aria-label={`${label}: ${explanation}`}
+    <Tooltip
+      content={tooltipText}
+      position="auto"
+      showDelay={200}
+      hideDelay={100}
     >
-      {/* Input Handle */}
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="w-3 h-3 border-2 border-gray-400 bg-white"
-        style={{ top: -6 }}
-      />
+      <button
+        className="relative cursor-pointer transition-all duration-200 hover:shadow-md group border-0 p-0 bg-transparent"
+        style={{
+          ...nodeStyle,
+          ...selectedStyle,
+          border: `${
+            selectedStyle.borderWidth || nodeStyle.borderWidth
+          }px solid ${selectedStyle.borderColor || nodeStyle.borderColor}`,
+          borderRadius: `${nodeStyle.borderRadius}px`,
+          width: `${nodeStyle.width}px`,
+          height: `${nodeStyle.height}px`,
+          boxShadow: selectedStyle.boxShadow || "0 2px 4px rgba(0, 0, 0, 0.1)",
+        }}
+        onClick={handleClick}
+        aria-label={`${label}: ${nodeExplanation.simple}`}
+      >
+        {/* Input Handle */}
+        <Handle
+          type="target"
+          position={Position.Top}
+          className="w-3 h-3 border-2 border-gray-400 bg-white"
+          style={{ top: -6 }}
+        />
 
-      {/* Node Content */}
-      <div className="flex flex-col items-center justify-center h-full p-2">
-        {/* Icon */}
-        <div className="mb-1">
-          <Icon
-            size={24}
-            className="transition-transform duration-200 group-hover:scale-110"
+        {/* Node Content */}
+        <div className="flex flex-col items-center justify-center h-full p-2">
+          {/* Icon */}
+          <div className="mb-1">
+            <Icon
+              size={24}
+              className="transition-transform duration-200 group-hover:scale-110"
+              style={{ color: nodeStyle.color }}
+            />
+          </div>
+
+          {/* Label */}
+          <div
+            className="text-xs font-medium text-center leading-tight truncate w-full"
             style={{ color: nodeStyle.color }}
-          />
+            title={label}
+          >
+            {label}
+          </div>
         </div>
 
-        {/* Label */}
-        <div
-          className="text-xs font-medium text-center leading-tight truncate w-full"
-          style={{ color: nodeStyle.color }}
-          title={label}
-        >
-          {label}
-        </div>
-      </div>
-
-      {/* Output Handle */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="w-3 h-3 border-2 border-gray-400 bg-white"
-        style={{ bottom: -6 }}
-      />
-
-      {/* Hover Tooltip */}
-      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-        {explanation}
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-      </div>
-    </button>
+        {/* Output Handle */}
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          className="w-3 h-3 border-2 border-gray-400 bg-white"
+          style={{ bottom: -6 }}
+        />
+      </button>
+    </Tooltip>
   );
 };
 

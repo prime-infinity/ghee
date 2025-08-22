@@ -8,6 +8,7 @@ import {
   Database,
 } from "lucide-react";
 import type { VisualEdge } from "../../types/visualization";
+import { ExplanationService } from "../../services/ExplanationService";
 
 /**
  * Props for the EdgeDetailsModal component
@@ -32,6 +33,11 @@ export const EdgeDetailsModal: React.FC<EdgeDetailsModalProps> = ({
   if (!isOpen) return null;
 
   const { label, type, color } = edge;
+
+  // Get child-friendly explanation
+  const edgeExplanation = ExplanationService.getEdgeExplanation(edge);
+  const detailedExplanation =
+    ExplanationService.getDetailedExplanation(edgeExplanation);
 
   // Handle backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -159,10 +165,22 @@ export const EdgeDetailsModal: React.FC<EdgeDetailsModalProps> = ({
             <h3 className="text-sm font-medium text-gray-900 mb-2">
               What does this connection do?
             </h3>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {getTypeDescription(type)}
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+              {detailedExplanation}
             </p>
           </div>
+
+          {/* Fun Fact */}
+          {edgeExplanation.analogy && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <h4 className="text-sm font-medium text-yellow-900 mb-1">
+                🎯 Think of it like this:
+              </h4>
+              <p className="text-sm text-yellow-800">
+                {edgeExplanation.analogy}
+              </p>
+            </div>
+          )}
 
           {/* Connection Label */}
           <div>

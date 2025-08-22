@@ -1,11 +1,13 @@
 import React from "react";
 import {
-  EdgeProps,
+  type EdgeProps,
   getBezierPath,
   EdgeLabelRenderer,
   BaseEdge,
 } from "reactflow";
 import type { VisualEdge } from "../../types/visualization";
+import { Tooltip } from "../ui/Tooltip";
+import { ExplanationService } from "../../services/ExplanationService";
 
 /**
  * Data passed to the custom edge component
@@ -52,12 +54,12 @@ export const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
   };
 
   // Enhanced styling based on edge type and selection state
+  const baseStrokeWidth =
+    typeof style.strokeWidth === "number" ? style.strokeWidth : 2;
   const edgeStyle = {
     ...style,
     stroke: visualEdge.color,
-    strokeWidth: selected
-      ? (style.strokeWidth || 2) + 1
-      : style.strokeWidth || 2,
+    strokeWidth: selected ? baseStrokeWidth + 1 : baseStrokeWidth,
     strokeDasharray: visualEdge.style?.strokeDasharray,
   };
 
@@ -87,6 +89,10 @@ export const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
     return baseStyle;
   };
 
+  // Get child-friendly explanation
+  const edgeExplanation = ExplanationService.getEdgeExplanation(visualEdge);
+  const tooltipText = ExplanationService.getTooltipText(edgeExplanation);
+
   return (
     <>
       <BaseEdge path={edgePath} style={edgeStyle} />
@@ -99,27 +105,34 @@ export const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
           }}
           className="nodrag nopan"
         >
-          <button
-            style={getLabelStyle()}
-            onClick={handleClick}
-            onMouseEnter={(e) => {
-              if (!selected) {
-                e.currentTarget.style.backgroundColor = visualEdge.color;
-                e.currentTarget.style.color = "white";
-                e.currentTarget.style.transform = "scale(1.05)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!selected) {
-                e.currentTarget.style.backgroundColor = "white";
-                e.currentTarget.style.color = visualEdge.color;
-                e.currentTarget.style.transform = "scale(1)";
-              }
-            }}
-            title={`${visualEdge.label} - Click for details`}
+          <Tooltip
+            content={tooltipText}
+            position="auto"
+            showDelay={200}
+            hideDelay={100}
           >
-            {visualEdge.label}
-          </button>
+            <button
+              style={getLabelStyle()}
+              onClick={handleClick}
+              onMouseEnter={(e) => {
+                if (!selected) {
+                  e.currentTarget.style.backgroundColor = visualEdge.color;
+                  e.currentTarget.style.color = "white";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!selected) {
+                  e.currentTarget.style.backgroundColor = "white";
+                  e.currentTarget.style.color = visualEdge.color;
+                  e.currentTarget.style.transform = "scale(1)";
+                }
+              }}
+              aria-label={`${visualEdge.label}: ${edgeExplanation.simple}`}
+            >
+              {visualEdge.label}
+            </button>
+          </Tooltip>
         </div>
       </EdgeLabelRenderer>
     </>

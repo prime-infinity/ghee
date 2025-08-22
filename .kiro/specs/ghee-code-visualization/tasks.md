@@ -83,7 +83,7 @@
   - Write component tests for diagram interactions
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 8.1, 8.2, 8.3_
 
-- [ ] 11. Implement tooltip system for simple explanations
+- [x] 11. Implement tooltip system for simple explanations
 
   - Create tooltip component with simple, non-technical explanations
   - Add hover and click interactions for showing explanations

@@ -1,6 +1,7 @@
 import React from "react";
 import { X } from "lucide-react";
 import type { VisualNode } from "../../types/visualization";
+import { ExplanationService } from "../../services/ExplanationService";
 
 /**
  * Props for the NodeDetailsModal component
@@ -24,7 +25,12 @@ export const NodeDetailsModal: React.FC<NodeDetailsModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const { icon: Icon, label, explanation, type, metadata } = node;
+  const { icon: Icon, label, type, metadata } = node;
+
+  // Get child-friendly explanation
+  const nodeExplanation = ExplanationService.getNodeExplanation(node);
+  const detailedExplanation =
+    ExplanationService.getDetailedExplanation(nodeExplanation);
 
   // Handle backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -118,20 +124,22 @@ export const NodeDetailsModal: React.FC<NodeDetailsModalProps> = ({
             <h3 className="text-sm font-medium text-gray-900 mb-2">
               What does this do?
             </h3>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {explanation}
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+              {detailedExplanation}
             </p>
           </div>
 
-          {/* Type Description */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-2">
-              More about this type
-            </h3>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {getTypeDescription(type)}
-            </p>
-          </div>
+          {/* Fun Fact */}
+          {nodeExplanation.analogy && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <h4 className="text-sm font-medium text-yellow-900 mb-1">
+                🎯 Think of it like this:
+              </h4>
+              <p className="text-sm text-yellow-800">
+                {nodeExplanation.analogy}
+              </p>
+            </div>
+          )}
 
           {/* Pattern Information */}
           {metadata.patternType && (
