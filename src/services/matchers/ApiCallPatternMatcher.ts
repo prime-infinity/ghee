@@ -167,6 +167,10 @@ export class ApiCallPatternMatcher implements PatternMatcher {
    * @returns Pattern match if found, null otherwise
    */
   private findAxiosPattern(node: Node, context: TraversalContext): PatternMatch | null {
+    if (!t.isCallExpression(node)) {
+      return null;
+    }
+    
     let isAxiosCall = false;
     let axiosMethod = 'get';
 

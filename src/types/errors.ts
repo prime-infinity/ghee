@@ -1,4 +1,4 @@
-import { DiagramData } from './visualization';
+import type { DiagramData } from './visualization';
 
 /**
  * User-friendly error with helpful messaging

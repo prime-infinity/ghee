@@ -131,7 +131,7 @@ export class CounterPatternMatcher implements PatternMatcher {
    * @param context - Traversal context
    * @returns Pattern match if found, null otherwise
    */
-  private findCounterPattern(componentNode: Node, context: TraversalContext): PatternMatch | null {
+  private findCounterPattern(componentNode: Node, _context: TraversalContext): PatternMatch | null {
     const involvedNodes: Node[] = [componentNode];
     const variables: string[] = [];
     const functions: string[] = [];

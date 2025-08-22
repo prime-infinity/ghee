@@ -192,7 +192,7 @@ export class ReactHookDetector {
     try {
       // Find the parent variable declarator to get destructured names
       let destructuredNames: string[] = [];
-      let parentNode = callNode;
+      // let _parentNode = callNode;
       
       // This is a simplified approach - in a real implementation, you'd need
       // to traverse up the AST to find the parent variable declarator
@@ -294,9 +294,9 @@ export class ReactHookDetector {
       
       if (dependenciesArg) {
         if (t.isArrayExpression(dependenciesArg)) {
-          dependencies = dependenciesArg.elements.filter((el): el is Node => 
+          dependencies = dependenciesArg.elements.filter((el): el is t.Expression => 
             el !== null && el !== undefined
-          );
+          ) as Node[];
           runsOnce = dependencies.length === 0;
         }
       }

@@ -228,7 +228,7 @@ export class DatabasePatternMatcher implements PatternMatcher {
    * @param context - Traversal context
    * @returns Pattern match if found, null otherwise
    */
-  private findNewExpressionPattern(node: t.NewExpression, context: TraversalContext): PatternMatch | null {
+  private findNewExpressionPattern(node: t.NewExpression, _context: TraversalContext): PatternMatch | null {
     const connectionInfo = this.analyzeNewExpressionConnection(node);
     if (!connectionInfo.isConnection) {
       return null;
@@ -520,7 +520,7 @@ export class DatabasePatternMatcher implements PatternMatcher {
       isConnection: false,
       library: null as string | null,
       type: 'constructor',
-      config: null,
+      config: null as { properties: Record<string, any>; variables: string[]; } | null,
       variables: [] as string[]
     };
 
@@ -572,7 +572,7 @@ export class DatabasePatternMatcher implements PatternMatcher {
       isConnection: false,
       library: null as string | null,
       type: 'unknown',
-      config: null,
+      config: null as { properties: Record<string, any>; variables: string[]; } | null,
       variables: [] as string[]
     };
 
@@ -727,7 +727,7 @@ export class DatabasePatternMatcher implements PatternMatcher {
         result.library = 'generic';
       } else {
         // Check for specific library names
-        for (const [library, methods] of Object.entries(this.dbLibraries)) {
+        for (const [library, _methods] of Object.entries(this.dbLibraries)) {
           if (objectName.includes(library)) {
             result.isDbLibrary = true;
             result.library = library;
@@ -971,7 +971,7 @@ export class DatabasePatternMatcher implements PatternMatcher {
       hasQueryExecution: true,
       hasDataFlow: true,
       hasErrorHandling: false,
-      dbLibrary: queryInfo.library,
+      dbLibrary: 'unknown',
       operationType: 'unknown',
       operationCount: 1,
       tables: [],

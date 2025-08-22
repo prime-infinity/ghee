@@ -16,7 +16,7 @@ import type { RecognizedPattern } from '../types';
 export class VariableDeclarationMatcher implements PatternMatcher {
   readonly patternType: RecognizedPattern['type'] = 'component-lifecycle';
 
-  match(node: Node, context: TraversalContext): PatternMatch[] {
+  match(node: Node, _context: TraversalContext): PatternMatch[] {
     const matches: PatternMatch[] = [];
 
     // Look for variable declarations
@@ -118,7 +118,7 @@ export async function demonstratePatternRecognition(): Promise<void> {
 export class ReactHookMatcher implements PatternMatcher {
   readonly patternType: RecognizedPattern['type'] = 'counter';
 
-  match(node: Node, context: TraversalContext): PatternMatch[] {
+  match(node: Node, _context: TraversalContext): PatternMatch[] {
     const matches: PatternMatch[] = [];
 
     // Look for useState calls

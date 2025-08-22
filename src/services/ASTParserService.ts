@@ -1,6 +1,7 @@
-import { parse, ParserOptions } from '@babel/parser';
-import { Node } from '@babel/types';
-import { ParseResult, ValidationResult, ParseError } from '../types';
+import { parse } from '@babel/parser';
+import type { ParserOptions } from '@babel/parser';
+import type { Node } from '@babel/types';
+import type { ParseResult, ValidationResult, ParseError } from '../types';
 
 /**
  * Service for parsing JavaScript/TypeScript code into Abstract Syntax Trees

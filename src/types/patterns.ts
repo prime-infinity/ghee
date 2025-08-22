@@ -64,6 +64,34 @@ export interface PatternMetadata {
   complexity: 'simple' | 'medium' | 'complex';
   /** Additional context about the pattern */
   context?: string;
+  
+  // API Call Pattern specific properties
+  /** Type of API call (fetch, axios, etc.) */
+  apiType?: string;
+  /** API endpoint URL */
+  endpoint?: string;
+  /** HTTP method (GET, POST, etc.) */
+  httpMethod?: string;
+  /** Whether the pattern has success handling */
+  hasSuccessHandling?: boolean;
+  /** Whether the pattern has error handling */
+  hasErrorHandling?: boolean;
+  
+  // Database Pattern specific properties
+  /** Whether this pattern has SQL operations */
+  hasSqlOperation?: boolean;
+  /** Type of database operation (select, insert, update, delete) */
+  operationType?: string;
+  /** Database tables involved */
+  tables?: string[];
+  /** Whether this pattern has database connection */
+  hasDbConnection?: boolean;
+  /** Database library used (mysql, pg, prisma, etc.) */
+  dbLibrary?: string;
+  /** Method name for ORM operations */
+  methodName?: string;
+  /** Model name for ORM operations */
+  modelName?: string;
 }
 
 /**

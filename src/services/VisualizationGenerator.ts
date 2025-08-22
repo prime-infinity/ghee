@@ -19,10 +19,10 @@ import {
   User, 
   Component, 
   AlertTriangle, 
-  Function, 
   Variable,
-  LucideIcon
+  Code
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 /**
  * Icon mapping for different pattern node types
@@ -35,7 +35,7 @@ const ICON_MAP: Record<PatternNode['type'], LucideIcon> = {
   user: User,
   component: Component,
   error: AlertTriangle,
-  function: Function,
+  function: Code,
   variable: Variable
 };
 
@@ -233,7 +233,7 @@ export class VisualizationGenerator {
    */
   private mapCounterPatternNode(
     patternNode: PatternNode,
-    pattern: RecognizedPattern
+    _pattern: RecognizedPattern
   ): VisualNode['type'] {
     const label = patternNode.label.toLowerCase();
     const properties = patternNode.properties;
@@ -266,7 +266,7 @@ export class VisualizationGenerator {
    */
   private mapApiCallPatternNode(
     patternNode: PatternNode,
-    pattern: RecognizedPattern
+    _pattern: RecognizedPattern
   ): VisualNode['type'] {
     const label = patternNode.label.toLowerCase();
     const properties = patternNode.properties;
@@ -298,7 +298,7 @@ export class VisualizationGenerator {
    */
   private mapDatabasePatternNode(
     patternNode: PatternNode,
-    pattern: RecognizedPattern
+    _pattern: RecognizedPattern
   ): VisualNode['type'] {
     const label = patternNode.label.toLowerCase();
     const properties = patternNode.properties;
@@ -319,7 +319,7 @@ export class VisualizationGenerator {
    */
   private mapErrorHandlingPatternNode(
     patternNode: PatternNode,
-    pattern: RecognizedPattern
+    _pattern: RecognizedPattern
   ): VisualNode['type'] {
     const label = patternNode.label.toLowerCase();
 
@@ -334,8 +334,8 @@ export class VisualizationGenerator {
    * Map component lifecycle pattern nodes to visual types
    */
   private mapComponentLifecyclePatternNode(
-    patternNode: PatternNode,
-    pattern: RecognizedPattern
+    _patternNode: PatternNode,
+    _pattern: RecognizedPattern
   ): VisualNode['type'] {
     return 'component';
   }
@@ -568,7 +568,7 @@ export class VisualizationGenerator {
    */
   private getNodeStyle(
     nodeType: PatternNode['type'],
-    patternType: RecognizedPattern['type']
+    _patternType: RecognizedPattern['type']
   ) {
     const baseStyle = {
       width: this.defaultNodeSize.width,
@@ -632,7 +632,7 @@ export class VisualizationGenerator {
    */
   private getEdgeStyle(
     edgeType: VisualEdge['type'],
-    patternType: RecognizedPattern['type']
+    _patternType: RecognizedPattern['type']
   ) {
     const baseStyle = {
       strokeWidth: 2,
@@ -666,7 +666,7 @@ export class VisualizationGenerator {
    * @param nodes - Positioned visual nodes
    * @returns Layout configuration
    */
-  private createLayoutConfig(nodes: VisualNode[]): LayoutConfig {
+  private createLayoutConfig(_nodes: VisualNode[]): LayoutConfig {
     return {
       direction: 'vertical',
       nodeSpacing: this.nodeSpacing,

@@ -22,7 +22,7 @@ class MockPatternMatcher implements PatternMatcher {
     this.mockConfidence = confidence;
   }
 
-  match(node: Node, context: TraversalContext): PatternMatch[] {
+  match(_node: Node, _context: TraversalContext): PatternMatch[] {
     // Only return matches when explicitly set to do so
     if (this.shouldMatch && this.mockMatches.length > 0) {
       // Return matches only once to avoid duplicates
@@ -33,7 +33,7 @@ class MockPatternMatcher implements PatternMatcher {
     return [];
   }
 
-  getConfidence(match: PatternMatch): number {
+  getConfidence(_match: PatternMatch): number {
     return this.mockConfidence;
   }
 

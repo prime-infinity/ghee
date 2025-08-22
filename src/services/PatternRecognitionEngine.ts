@@ -315,7 +315,7 @@ export class PatternRecognitionEngine {
    * @param match - Pattern match context
    * @returns Pattern node type
    */
-  private determineNodeType(node: Node, match: PatternMatch): PatternNode['type'] {
+  private determineNodeType(node: Node, _match: PatternMatch): PatternNode['type'] {
     // Basic node type determination - specific matchers will provide better logic
     if (t.isFunctionDeclaration(node) || t.isArrowFunctionExpression(node)) {
       return 'function';
@@ -332,7 +332,7 @@ export class PatternRecognitionEngine {
    * @param match - Pattern match context
    * @returns Node label
    */
-  private generateNodeLabel(node: Node, match: PatternMatch): string {
+  private generateNodeLabel(node: Node, _match: PatternMatch): string {
     if (t.isFunctionDeclaration(node) && node.id && t.isIdentifier(node.id)) {
       return node.id.name;
     }
@@ -361,7 +361,7 @@ export class PatternRecognitionEngine {
    * @param sourceCode - Original source code (optional)
    * @returns Code location
    */
-  private getCodeLocation(node: Node, sourceCode?: string): CodeLocation {
+  private getCodeLocation(node: Node, _sourceCode?: string): CodeLocation {
     const loc = node.loc;
     const start = node.start || 0;
     const end = node.end || start;

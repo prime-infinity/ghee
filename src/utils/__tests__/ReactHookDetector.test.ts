@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ReactHookDetector } from '../ReactHookDetector';
 import { ASTParserService } from '../../services/ASTParserService';
-import type { Node } from '@babel/types';
-import * as t from '@babel/types';
+// import * as t from '@babel/types';
 
 describe('ReactHookDetector', () => {
   let astParser: ASTParserService;

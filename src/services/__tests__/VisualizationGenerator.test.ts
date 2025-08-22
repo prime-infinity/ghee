@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { VisualizationGenerator } from '../VisualizationGenerator';
-import type { RecognizedPattern, PatternNode, PatternConnection } from '../../types/patterns';
-import type { DiagramData, VisualNode, VisualEdge } from '../../types/visualization';
+import type { RecognizedPattern } from '../../types/patterns';
 
 describe('VisualizationGenerator', () => {
   let generator: VisualizationGenerator;
