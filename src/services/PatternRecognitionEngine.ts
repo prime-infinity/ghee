@@ -9,6 +9,7 @@ import type {
 } from '../types';
 import { CounterPatternMatcher } from './matchers/CounterPatternMatcher';
 import { ApiCallPatternMatcher } from './matchers/ApiCallPatternMatcher';
+import { DatabasePatternMatcher } from './matchers/DatabasePatternMatcher';
 
 /**
  * Base interface for pattern matchers
@@ -69,6 +70,7 @@ export class PatternRecognitionEngine {
     // Register built-in pattern matchers
     this.registerMatcher(new CounterPatternMatcher());
     this.registerMatcher(new ApiCallPatternMatcher());
+    this.registerMatcher(new DatabasePatternMatcher());
   }
 
   /**
