@@ -28,11 +28,11 @@ export class DatabasePatternMatcher implements PatternMatcher {
     'mysql2': ['createConnection', 'createPool', 'query', 'execute'],
     'pg': ['Client', 'Pool', 'connect', 'query'],
     'sqlite3': ['Database', 'run', 'get', 'all'],
-    'mongodb': ['MongoClient', 'connect', 'collection', 'find', 'insertOne', 'updateOne', 'deleteOne'],
+    'mongodb': ['MongoClient', 'connect', 'collection', 'find', 'insertOne', 'updateOne', 'deleteOne', 'deleteMany'],
     'mongoose': ['connect', 'model', 'find', 'save', 'remove', 'update'],
     'sequelize': ['Sequelize', 'define', 'findAll', 'create', 'update', 'destroy'],
     'typeorm': ['createConnection', 'getRepository', 'find', 'save', 'remove'],
-    'prisma': ['PrismaClient', 'findMany', 'create', 'update', 'delete']
+    'prisma': ['PrismaClient', 'findMany', 'findUnique', 'create', 'update', 'delete']
   };
 
   /**
@@ -63,6 +63,13 @@ export class DatabasePatternMatcher implements PatternMatcher {
       const ormMatch = this.findOrmPattern(node, context);
       if (ormMatch) {
         matches.push(ormMatch);
+        return matches; // Don't check for generic query if we found ORM
+      }
+
+      // Check for generic query execution patterns
+      const queryMatch = this.findGenericQueryPattern(node, context);
+      if (queryMatch) {
+        matches.push(queryMatch);
       }
     }
 
@@ -87,7 +94,7 @@ export class DatabasePatternMatcher implements PatternMatcher {
 
     // Higher confidence if we found SQL operations
     if (match.metadata.hasSqlOperation) {
-      confidence += 0.3;
+      confidence += 0.35;
       
       // Extra confidence for well-formed SQL with table names
       if (match.metadata.tables && match.metadata.tables.length > 0) {
@@ -124,7 +131,7 @@ export class DatabasePatternMatcher implements PatternMatcher {
 
     // Bonus for complete patterns (SQL + execution + library)
     if (match.metadata.hasSqlOperation && match.metadata.hasQueryExecution && match.metadata.dbLibrary) {
-      confidence += 0.1;
+      confidence += 0.15;
     }
 
     // Penalty for simple connection patterns without much context
@@ -579,13 +586,22 @@ export class DatabasePatternMatcher implements PatternMatcher {
       }
     }
 
-    // Check for method calls on database libraries
+    // Check for method calls on database libraries (but only connection methods, not ORM operations)
     if (t.isMemberExpression(node.callee)) {
       const memberInfo = this.analyzeMemberExpression(node.callee);
-      if (memberInfo.isDbLibrary) {
-        result.isConnection = true;
-        result.library = memberInfo.library;
-        result.type = 'method';
+      if (memberInfo.isDbLibrary && memberInfo.method) {
+        // Only consider it a connection if it's actually a connection method
+        const connectionMethods = [
+          'connect', 'createconnection', 'createpool', 'getconnection',
+          'client', 'pool', 'database'
+        ];
+        
+        if (connectionMethods.some(method => 
+            memberInfo.method?.toLowerCase().includes(method.toLowerCase()))) {
+          result.isConnection = true;
+          result.library = memberInfo.library;
+          result.type = 'method';
+        }
       }
     }
 
@@ -631,7 +647,9 @@ export class DatabasePatternMatcher implements PatternMatcher {
         result.operation = this.mapMethodToOperation(memberInfo.method);
         
         // Try to extract model name from the object
-        if (t.isMemberExpression(node.callee.object)) {
+        if (t.isIdentifier(node.callee.object)) {
+          result.model = node.callee.object.name;
+        } else if (t.isMemberExpression(node.callee.object)) {
           const objectInfo = this.analyzeMemberExpression(node.callee.object);
           result.model = objectInfo.property;
         }
@@ -676,39 +694,81 @@ export class DatabasePatternMatcher implements PatternMatcher {
       }
     }
 
-    // Also check if the object name suggests a database library
-    if (!result.isDbLibrary && t.isIdentifier(node.object)) {
-      const objectName = node.object.name.toLowerCase();
+    // Special handling for model patterns (User.findAll, etc.) - check this first
+    if (!result.isDbLibrary && t.isIdentifier(node.object) && result.method) {
+      const objectName = node.object.name;
+      const methodLower = result.method.toLowerCase();
       
-      for (const [library, methods] of Object.entries(this.dbLibraries)) {
-        if (objectName.includes(library) || 
-            objectName === 'db' || objectName === 'database' ||
-            objectName === 'connection' || objectName === 'client' ||
-            objectName === 'pool' || objectName === 'repository') {
+      // Check for model patterns (capitalized object name + ORM method)
+      if (/^[A-Z][a-zA-Z]*$/.test(objectName)) {
+        // Check against known ORM methods
+        const ormMethods = [
+          'findall', 'findbypk', 'findone', 'findorcreate', 'create', 'update', 'destroy', 'save', 'remove',
+          'find', 'findmany', 'findunique', 'findbyid', 'insertone', 'updateone', 'deleteone', 'deletemany', 'replaceone',
+          'aggregate', 'count', 'distinct', 'populate'
+        ];
+        
+        if (ormMethods.some(method => methodLower === method || methodLower.includes(method))) {
           result.isDbLibrary = true;
-          result.library = library;
-          break;
+          result.library = this.detectOrmLibraryFromMethod(result.method);
         }
       }
     }
 
-    // Special handling for common patterns
+    // Also check if the object name suggests a database library
     if (!result.isDbLibrary && t.isIdentifier(node.object)) {
-      const objectName = node.object.name;
+      const objectName = node.object.name.toLowerCase();
       
-      // Check for model patterns (User.findAll, etc.)
-      if (/^[A-Z][a-zA-Z]*$/.test(objectName) && result.method) {
-        const methodLower = result.method.toLowerCase();
-        if (methodLower.includes('find') || methodLower.includes('create') || 
-            methodLower.includes('update') || methodLower.includes('delete') ||
-            methodLower.includes('save') || methodLower.includes('remove')) {
-          result.isDbLibrary = true;
-          result.library = 'orm'; // Generic ORM
+      // Check for generic database object names first
+      if (objectName === 'db' || objectName === 'database' ||
+          objectName === 'connection' || objectName === 'client' ||
+          objectName === 'pool' || objectName === 'repository') {
+        result.isDbLibrary = true;
+        result.library = 'generic';
+      } else {
+        // Check for specific library names
+        for (const [library, methods] of Object.entries(this.dbLibraries)) {
+          if (objectName.includes(library)) {
+            result.isDbLibrary = true;
+            result.library = library;
+            break;
+          }
         }
       }
     }
 
     return result;
+  }
+
+  /**
+   * Detect ORM library from method name
+   * @param method - Method name
+   * @returns Library name
+   */
+  private detectOrmLibraryFromMethod(method: string): string {
+    const methodLower = method.toLowerCase();
+    
+    // Sequelize methods
+    if (['findall', 'findbypk', 'findone', 'findorcreate', 'create', 'update', 'destroy'].includes(methodLower)) {
+      return 'sequelize';
+    }
+    
+    // Mongoose methods
+    if (['find', 'findone', 'findbyid', 'save', 'remove', 'populate', 'aggregate'].includes(methodLower)) {
+      return 'mongoose';
+    }
+    
+    // MongoDB methods
+    if (['insertone', 'updateone', 'deleteone', 'deletemany', 'replaceone', 'find', 'count', 'distinct'].includes(methodLower)) {
+      return 'mongodb';
+    }
+    
+    // Prisma methods
+    if (['findmany', 'findunique', 'create', 'update', 'delete', 'upsert'].includes(methodLower)) {
+      return 'prisma';
+    }
+    
+    return 'orm'; // Generic ORM
   }
 
   /**
@@ -765,7 +825,18 @@ export class DatabasePatternMatcher implements PatternMatcher {
         
         // Try to identify the library
         const memberInfo = this.analyzeMemberExpression(node.callee);
-        result.library = memberInfo.library;
+        result.library = memberInfo.library || 'generic'; // Default to generic if not identified
+        
+        // If we have a query method, it's likely a database call even if we can't identify the library
+        if (!memberInfo.isDbLibrary && t.isIdentifier(node.callee.object)) {
+          const objectName = node.callee.object.name.toLowerCase();
+          // Common database object names
+          if (objectName.includes('connection') || objectName.includes('client') || 
+              objectName.includes('db') || objectName.includes('database') ||
+              objectName.includes('pool')) {
+            result.library = 'generic';
+          }
+        }
       }
     }
 
@@ -831,6 +902,11 @@ export class DatabasePatternMatcher implements PatternMatcher {
         } else if (t.isIdentifier(prop.value)) {
           result.properties[key] = `{${prop.value.name}}`;
           result.variables.push(prop.value.name);
+        } else if (t.isObjectExpression(prop.value)) {
+          result.properties[key] = 'nested_object';
+          // Recursively extract variables from nested objects
+          const nestedProps = this.extractObjectProperties(prop.value);
+          result.variables.push(...nestedProps.variables);
         } else {
           result.properties[key] = 'expression';
         }
@@ -860,6 +936,84 @@ export class DatabasePatternMatcher implements PatternMatcher {
     }
 
     return null;
+  }
+
+  /**
+   * Find generic query execution patterns (like connection.query())
+   * @param node - AST node to analyze
+   * @param context - Traversal context
+   * @returns Pattern match if found, null otherwise
+   */
+  private findGenericQueryPattern(node: Node, context: TraversalContext): PatternMatch | null {
+    if (!t.isCallExpression(node)) {
+      return null;
+    }
+
+    // Check for method calls that look like database queries
+    if (t.isMemberExpression(node.callee) && t.isIdentifier(node.callee.property)) {
+      const methodName = node.callee.property.name.toLowerCase();
+      
+      if (['query', 'execute', 'run', 'get', 'all'].includes(methodName)) {
+        // This looks like a query call, proceed with pattern creation
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+
+    const involvedNodes: Node[] = [node];
+    const variables: string[] = [];
+    const functions: string[] = [];
+    const metadata: Record<string, any> = {
+      hasSqlOperation: false,
+      hasDbConnection: true,
+      hasQueryExecution: true,
+      hasDataFlow: true,
+      hasErrorHandling: false,
+      dbLibrary: queryInfo.library,
+      operationType: 'unknown',
+      operationCount: 1,
+      tables: [],
+      parameters: []
+    };
+
+    // Extract method arguments as parameters
+    if (node.arguments.length > 0) {
+      const params = this.extractCallArguments(node);
+      variables.push(...params.variables);
+      metadata.parameters = params.parameters;
+
+      // Check if first argument is a SQL query
+      const firstArg = node.arguments[0];
+      if (t.isStringLiteral(firstArg)) {
+        const query = firstArg.value.trim().toUpperCase();
+        if (this.containsSqlOperation(query)) {
+          metadata.hasSqlOperation = true;
+          metadata.sqlQuery = firstArg.value;
+          metadata.operationType = this.extractOperationType(firstArg.value);
+          metadata.tables = this.extractTableNames(firstArg.value);
+        }
+      }
+    }
+
+    // Look for error handling
+    const errorHandling = this.findPromiseHandling(node, context);
+    if (errorHandling && errorHandling.hasError) {
+      metadata.hasErrorHandling = true;
+      involvedNodes.push(...errorHandling.nodes);
+      variables.push(...errorHandling.variables);
+      functions.push(...errorHandling.functions);
+    }
+
+    return {
+      type: 'database',
+      rootNode: node,
+      involvedNodes,
+      variables,
+      functions,
+      metadata
+    };
   }
 
   /**

@@ -84,7 +84,7 @@ describe('PatternRecognitionEngine', () => {
       const types = engine.getRegisteredPatternTypes();
       expect(types).toContain('counter');
       expect(types).toContain('api-call');
-      expect(types).toHaveLength(2);
+      expect(types).toHaveLength(3); // Now includes database matcher
     });
 
     it('should replace existing matcher for same pattern type', () => {
@@ -94,8 +94,8 @@ describe('PatternRecognitionEngine', () => {
       engine.registerMatcher(firstMatcher);
       engine.registerMatcher(secondMatcher);
       
-      // Should still have 2 types: 'counter' (replaced) and 'api-call' (built-in)
-      expect(engine.getRegisteredPatternTypes()).toHaveLength(2);
+      // Should still have 3 types: 'counter' (replaced), 'api-call', and 'database' (built-in)
+      expect(engine.getRegisteredPatternTypes()).toHaveLength(3);
       expect(engine.getRegisteredPatternTypes()).toContain('counter');
       expect(engine.getRegisteredPatternTypes()).toContain('api-call');
     });

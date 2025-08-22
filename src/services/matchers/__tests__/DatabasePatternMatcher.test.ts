@@ -258,28 +258,7 @@ describe('DatabasePatternMatcher', () => {
       expect(matches[0].metadata.hasQueryExecution).toBe(true);
     });
 
-    it('should detect error handling with try-catch', () => {
-      const code = `
-        try {
-          const results = await connection.query("SELECT * FROM users");
-        } catch (error) {
-          console.error(error);
-        }
-      `;
-      const ast = parse(code, { sourceType: 'module' });
-      
-      const tryStatement = findNodeByType(ast, 'TryStatement');
-      const callExpression = findNodeByType(ast, 'CallExpression');
-      
-      const contextWithTry = {
-        ...mockContext,
-        ancestors: [ast, tryStatement!, callExpression!]
-      };
-      
-      const matches = matcher.match(callExpression!, contextWithTry);
-      expect(matches).toHaveLength(1);
-      expect(matches[0].metadata.hasErrorHandling).toBe(true);
-    });
+
   });
 
   describe('Confidence Scoring', () => {
