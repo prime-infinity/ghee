@@ -85,12 +85,14 @@ export class ApiCallPatternMatcher implements PatternMatcher {
    * @returns Pattern match if found, null otherwise
    */
   private findFetchPattern(node: Node, context: TraversalContext): PatternMatch | null {
-    // Look for fetch() call expressions
+    // Only match on the root fetch() call, not on chain methods
     if (!t.isCallExpression(node) || 
         !t.isIdentifier(node.callee) || 
         node.callee.name !== 'fetch') {
       return null;
     }
+    
+    const fetchNode = node;
 
     const involvedNodes: Node[] = [node];
     const variables: string[] = [];
@@ -399,6 +401,8 @@ export class ApiCallPatternMatcher implements PatternMatcher {
     hasError: boolean;
     successHandlers: string[];
     errorHandlers: string[];
+    errorTypes: string[];
+    successResponseTypes: string[];
     nodes: Node[];
     variables: string[];
     functions: string[];
@@ -408,6 +412,8 @@ export class ApiCallPatternMatcher implements PatternMatcher {
       hasError: false,
       successHandlers: [] as string[],
       errorHandlers: [] as string[],
+      errorTypes: [] as string[],
+      successResponseTypes: [] as string[],
       nodes: [] as Node[],
       variables: [] as string[],
       functions: [] as string[]
@@ -420,6 +426,8 @@ export class ApiCallPatternMatcher implements PatternMatcher {
       result.hasError = chainHandling.hasError;
       result.successHandlers.push(...chainHandling.successHandlers);
       result.errorHandlers.push(...chainHandling.errorHandlers);
+      result.errorTypes.push(...chainHandling.errorTypes);
+      result.successResponseTypes.push(...chainHandling.successResponseTypes);
       result.nodes.push(...chainHandling.nodes);
       result.variables.push(...chainHandling.variables);
       result.functions.push(...chainHandling.functions);
@@ -432,6 +440,8 @@ export class ApiCallPatternMatcher implements PatternMatcher {
       result.hasError = result.hasError || awaitHandling.hasError;
       result.successHandlers.push(...awaitHandling.successHandlers);
       result.errorHandlers.push(...awaitHandling.errorHandlers);
+      result.errorTypes.push(...awaitHandling.errorTypes);
+      result.successResponseTypes.push(...awaitHandling.successResponseTypes);
       result.nodes.push(...awaitHandling.nodes);
       result.variables.push(...awaitHandling.variables);
       result.functions.push(...awaitHandling.functions);
@@ -451,51 +461,55 @@ export class ApiCallPatternMatcher implements PatternMatcher {
     hasError: boolean;
     successHandlers: string[];
     errorHandlers: string[];
+    errorTypes: string[];
+    successResponseTypes: string[];
     nodes: Node[];
     variables: string[];
     functions: string[];
   } | null {
-    // Look for the API call within a member expression chain
-    // This is complex because we need to find the parent chain
-    const parent = this.findChainParent(apiCallNode, context);
-    if (!parent) return null;
+    // Find all promise chain calls in the current context
+    const chainCalls = this.findAllChainCalls(context);
+    if (chainCalls.length === 0) return null;
 
     const result = {
       hasSuccess: false,
       hasError: false,
       successHandlers: [] as string[],
       errorHandlers: [] as string[],
+      errorTypes: [] as string[],
+      successResponseTypes: [] as string[],
       nodes: [] as Node[],
       variables: [] as string[],
       functions: [] as string[]
     };
 
-    // Traverse the chain to find .then() and .catch() calls
-    let currentNode = parent;
-    while (t.isMemberExpression(currentNode) || t.isCallExpression(currentNode)) {
-      if (t.isCallExpression(currentNode) && t.isMemberExpression(currentNode.callee)) {
-        const methodName = t.isIdentifier(currentNode.callee.property) 
-          ? currentNode.callee.property.name 
-          : null;
+    // Analyze each chain call
+    chainCalls.forEach(chainCall => {
+      if (t.isMemberExpression(chainCall.callee) && t.isIdentifier(chainCall.callee.property)) {
+        const methodName = chainCall.callee.property.name;
 
-        if (methodName === 'then' && currentNode.arguments.length > 0) {
+        if (methodName === 'then' && chainCall.arguments.length > 0) {
           result.hasSuccess = true;
-          result.nodes.push(currentNode);
+          result.nodes.push(chainCall);
           
-          const handler = currentNode.arguments[0];
+          const handler = chainCall.arguments[0];
           if (t.isIdentifier(handler)) {
             result.successHandlers.push(handler.name);
             result.functions.push(handler.name);
           } else if (t.isArrowFunctionExpression(handler) || t.isFunctionExpression(handler)) {
             result.successHandlers.push('inline-success');
+            result.successResponseTypes.push('json', 'text');
             // Extract variables from the handler
             this.extractVariablesFromFunction(handler, result.variables);
+            // Analyze success handler body for response types
+            this.extractResponseTypesFromHandler(handler, result.successResponseTypes);
           }
-        } else if (methodName === 'catch' && currentNode.arguments.length > 0) {
+        } else if (methodName === 'catch' && chainCall.arguments.length > 0) {
           result.hasError = true;
-          result.nodes.push(currentNode);
+          result.nodes.push(chainCall);
+          result.errorTypes.push('network', 'server', 'timeout', 'client');
           
-          const handler = currentNode.arguments[0];
+          const handler = chainCall.arguments[0];
           if (t.isIdentifier(handler)) {
             result.errorHandlers.push(handler.name);
             result.functions.push(handler.name);
@@ -503,17 +517,21 @@ export class ApiCallPatternMatcher implements PatternMatcher {
             result.errorHandlers.push('inline-error');
             // Extract variables from the handler
             this.extractVariablesFromFunction(handler, result.variables);
+            // Analyze error handler body for specific error types
+            this.extractErrorTypesFromHandler(handler, result.errorTypes);
+          }
+        } else if (methodName === 'finally' && chainCall.arguments.length > 0) {
+          result.nodes.push(chainCall);
+          
+          const handler = chainCall.arguments[0];
+          if (t.isIdentifier(handler)) {
+            result.functions.push(handler.name);
+          } else if (t.isArrowFunctionExpression(handler) || t.isFunctionExpression(handler)) {
+            this.extractVariablesFromFunction(handler, result.variables);
           }
         }
       }
-
-      // Move to the next node in the chain
-      if (t.isCallExpression(currentNode) && t.isMemberExpression(currentNode.callee)) {
-        currentNode = currentNode.callee.object;
-      } else {
-        break;
-      }
-    }
+    });
 
     return (result.hasSuccess || result.hasError) ? result : null;
   }
@@ -529,6 +547,8 @@ export class ApiCallPatternMatcher implements PatternMatcher {
     hasError: boolean;
     successHandlers: string[];
     errorHandlers: string[];
+    errorTypes: string[];
+    successResponseTypes: string[];
     nodes: Node[];
     variables: string[];
     functions: string[];
@@ -542,6 +562,8 @@ export class ApiCallPatternMatcher implements PatternMatcher {
       hasError: false,
       successHandlers: ['await-success'] as string[],
       errorHandlers: [] as string[],
+      errorTypes: [] as string[],
+      successResponseTypes: ['json', 'text'] as string[],
       nodes: [awaitParent] as Node[],
       variables: [] as string[],
       functions: [] as string[]
@@ -552,6 +574,7 @@ export class ApiCallPatternMatcher implements PatternMatcher {
     if (tryCatchBlock) {
       result.hasError = true;
       result.errorHandlers.push('try-catch-error');
+      result.errorTypes.push('exception', 'network', 'timeout');
       result.nodes.push(tryCatchBlock);
     }
 
@@ -565,17 +588,26 @@ export class ApiCallPatternMatcher implements PatternMatcher {
    * @returns Parent chain node or null
    */
   private findChainParent(node: Node, context: TraversalContext): Node | null {
-    // Look through ancestors to find a call expression that contains our node
+    // For promise chains, we need to find the outermost call expression in the chain
+    // Look through ancestors to find the topmost call expression in a chain
+    let chainRoot: Node | null = null;
+    
     for (let i = context.ancestors.length - 1; i >= 0; i--) {
       const ancestor = context.ancestors[i];
+      
+      // Look for call expressions with member expressions (method calls)
       if (t.isCallExpression(ancestor) && t.isMemberExpression(ancestor.callee)) {
-        // Check if this ancestor contains our API call
-        if (this.nodeContains(ancestor, node)) {
-          return ancestor;
+        // Check if this is part of a promise chain (.then, .catch, .finally)
+        if (t.isIdentifier(ancestor.callee.property)) {
+          const methodName = ancestor.callee.property.name;
+          if (['then', 'catch', 'finally'].includes(methodName)) {
+            chainRoot = ancestor;
+          }
         }
       }
     }
-    return null;
+    
+    return chainRoot;
   }
 
   /**
@@ -647,6 +679,55 @@ export class ApiCallPatternMatcher implements PatternMatcher {
   }
 
   /**
+   * Find fetch call in a promise chain
+   * @param chainNode - A node in the promise chain (.then, .catch, etc.)
+   * @returns The fetch call expression if found
+   */
+  private findFetchInChain(chainNode: t.CallExpression): t.CallExpression | null {
+    let current = chainNode;
+    
+    // Traverse backwards through the chain to find the root fetch call
+    while (current && t.isCallExpression(current) && t.isMemberExpression(current.callee)) {
+      // Move to the object of the member expression (the left side of the dot)
+      const object = current.callee.object;
+      
+      if (t.isCallExpression(object)) {
+        if (t.isIdentifier(object.callee) && object.callee.name === 'fetch') {
+          return object; // Found the fetch call
+        }
+        current = object; // Continue traversing
+      } else {
+        break; // Not a call expression, stop traversing
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Find all promise chain calls in the current context
+   * @param context - Traversal context
+   * @returns Array of promise chain call expressions
+   */
+  private findAllChainCalls(context: TraversalContext): t.CallExpression[] {
+    const chainCalls: t.CallExpression[] = [];
+    
+    // Look through ancestors for promise chain calls
+    context.ancestors.forEach(ancestor => {
+      if (t.isCallExpression(ancestor) && t.isMemberExpression(ancestor.callee)) {
+        if (t.isIdentifier(ancestor.callee.property)) {
+          const methodName = ancestor.callee.property.name;
+          if (['then', 'catch', 'finally'].includes(methodName)) {
+            chainCalls.push(ancestor);
+          }
+        }
+      }
+    });
+    
+    return chainCalls;
+  }
+
+  /**
    * Extract variables from a function expression
    * @param func - Function expression
    * @param variables - Array to add variables to
@@ -661,5 +742,109 @@ export class ApiCallPatternMatcher implements PatternMatcher {
 
     // Could add more sophisticated variable extraction from function body
     // For now, just extract parameters
+  }
+
+  /**
+   * Extract error types from error handler function
+   * @param handler - Error handler function
+   * @param errorTypes - Array to add error types to
+   */
+  private extractErrorTypesFromHandler(handler: t.Function, errorTypes: string[]): void {
+    // Look for specific error handling patterns in the function body
+    const searchForErrorTypes = (node: Node) => {
+      // Look for error.status, error.code, error.name checks
+      if (t.isMemberExpression(node) && t.isIdentifier(node.property)) {
+        const property = node.property.name;
+        if (property === 'status' || property === 'statusCode') {
+          errorTypes.push('http-status');
+        } else if (property === 'code') {
+          errorTypes.push('error-code');
+        } else if (property === 'name') {
+          errorTypes.push('error-name');
+        } else if (property === 'message') {
+          errorTypes.push('error-message');
+        }
+      }
+
+      // Look for specific error type checks
+      if (t.isStringLiteral(node)) {
+        const value = node.value.toLowerCase();
+        if (value.includes('network')) {
+          errorTypes.push('network');
+        } else if (value.includes('timeout')) {
+          errorTypes.push('timeout');
+        } else if (value.includes('abort')) {
+          errorTypes.push('abort');
+        } else if (value.includes('cors')) {
+          errorTypes.push('cors');
+        }
+      }
+
+      // Recursively search child nodes
+      Object.values(node).forEach(value => {
+        if (Array.isArray(value)) {
+          value.forEach(item => {
+            if (item && typeof item === 'object' && item.type) {
+              searchForErrorTypes(item);
+            }
+          });
+        } else if (value && typeof value === 'object' && value.type) {
+          searchForErrorTypes(value);
+        }
+      });
+    };
+
+    if (handler.body) {
+      searchForErrorTypes(handler.body);
+    }
+  }
+
+  /**
+   * Extract response types from success handler function
+   * @param handler - Success handler function
+   * @param responseTypes - Array to add response types to
+   */
+  private extractResponseTypesFromHandler(handler: t.Function, responseTypes: string[]): void {
+    // Look for response processing patterns in the function body
+    const searchForResponseTypes = (node: Node) => {
+      // Look for .json(), .text(), .blob(), etc.
+      if (t.isMemberExpression(node) && t.isIdentifier(node.property)) {
+        const property = node.property.name;
+        if (['json', 'text', 'blob', 'arrayBuffer', 'formData'].includes(property)) {
+          if (!responseTypes.includes(property)) {
+            responseTypes.push(property);
+          }
+        }
+      }
+
+      // Look for JSON.parse calls
+      if (t.isCallExpression(node) && 
+          t.isMemberExpression(node.callee) &&
+          t.isIdentifier(node.callee.object) &&
+          node.callee.object.name === 'JSON' &&
+          t.isIdentifier(node.callee.property) &&
+          node.callee.property.name === 'parse') {
+        if (!responseTypes.includes('json')) {
+          responseTypes.push('json');
+        }
+      }
+
+      // Recursively search child nodes
+      Object.values(node).forEach(value => {
+        if (Array.isArray(value)) {
+          value.forEach(item => {
+            if (item && typeof item === 'object' && item.type) {
+              searchForResponseTypes(item);
+            }
+          });
+        } else if (value && typeof value === 'object' && value.type) {
+          searchForResponseTypes(value);
+        }
+      });
+    };
+
+    if (handler.body) {
+      searchForResponseTypes(handler.body);
+    }
   }
 }

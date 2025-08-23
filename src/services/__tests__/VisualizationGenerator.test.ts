@@ -410,11 +410,13 @@ describe('VisualizationGenerator', () => {
       expect(successEdge.color).toBe('#10b981'); // green-500
       expect(successEdge.style?.strokeWidth).toBe(3);
       
-      const errorEdge = result.edges.find(e => e.label === 'error')!;
+      const errorEdge = result.edges.find(e => e.type === 'error')!;
+      expect(errorEdge).toBeDefined();
       expect(errorEdge.type).toBe('error');
       expect(errorEdge.color).toBe('#ef4444'); // red-500
       expect(errorEdge.style?.strokeWidth).toBe(3);
       expect(errorEdge.style?.strokeDasharray).toBe('5,5');
+      expect(errorEdge.label).toContain('⚠️'); // Should have warning emoji
     });
 
     it('should map connection types to edge types correctly', () => {

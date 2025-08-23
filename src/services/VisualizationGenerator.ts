@@ -172,10 +172,10 @@ export class VisualizationGenerator {
     const metadata: NodeMetadata = {
       patternNodeId: patternNode.id,
       patternType: pattern.type,
-      codeLocation: {
+      codeLocation: patternNode.codeLocation ? {
         start: patternNode.codeLocation.start,
         end: patternNode.codeLocation.end
-      },
+      } : undefined,
       context: {
         ...patternNode.properties,
         patternConfidence: pattern.metadata.confidence,
@@ -373,16 +373,104 @@ export class VisualizationGenerator {
     const color = EDGE_COLOR_MAP[edgeType];
     const animated = edgeType === 'action' || edgeType === 'data-flow';
 
+    // Enhance label for error paths with warning information
+    let enhancedLabel = connection.label;
+    if (edgeType === 'error') {
+      enhancedLabel = this.enhanceErrorPathLabel(connection, pattern);
+    }
+
     return {
       id,
       source: sourceId,
       target: targetId,
-      label: connection.label,
+      label: enhancedLabel,
       type: edgeType,
       color,
       animated,
-      style: this.getEdgeStyle(edgeType, pattern.type)
+      style: this.getEdgeStyle(edgeType, pattern.type),
+      // Add metadata for error paths
+      ...(edgeType === 'error' && {
+        metadata: {
+          errorTypes: connection.properties.errorTypes || [],
+          statusCodes: connection.properties.statusCodes,
+          warningLevel: this.determineWarningLevel(connection, pattern)
+        }
+      })
     };
+  }
+
+  /**
+   * Enhance error path labels with warning information
+   * @param connection - Pattern connection
+   * @param pattern - Parent pattern
+   * @returns Enhanced label
+   */
+  private enhanceErrorPathLabel(
+    connection: PatternConnection,
+    pattern: RecognizedPattern
+  ): string {
+    const baseLabel = connection.label;
+    const errorTypes = connection.properties.errorTypes || [];
+    const statusCodes = connection.properties.statusCodes;
+
+    // Add warning emoji and specific error information
+    let enhancedLabel = `⚠️ ${baseLabel}`;
+
+    // Add specific error type information
+    if (errorTypes.length > 0) {
+      const primaryErrorType = errorTypes[0];
+      switch (primaryErrorType) {
+        case 'network':
+          enhancedLabel += ' (network issue)';
+          break;
+        case 'server':
+          enhancedLabel += ' (server error)';
+          break;
+        case 'timeout':
+          enhancedLabel += ' (timeout)';
+          break;
+        case 'client':
+          enhancedLabel += ' (client error)';
+          break;
+        default:
+          if (statusCodes) {
+            enhancedLabel += ` (${statusCodes})`;
+          }
+      }
+    }
+
+    return enhancedLabel;
+  }
+
+  /**
+   * Determine warning level for error paths
+   * @param connection - Pattern connection
+   * @param pattern - Parent pattern
+   * @returns Warning level
+   */
+  private determineWarningLevel(
+    connection: PatternConnection,
+    pattern: RecognizedPattern
+  ): 'low' | 'medium' | 'high' {
+    const errorTypes = connection.properties.errorTypes || [];
+    const statusCodes = connection.properties.statusCodes;
+
+    // High warning for critical errors
+    if (errorTypes.includes('server') || 
+        errorTypes.includes('network') ||
+        (statusCodes && statusCodes.includes('5'))) {
+      return 'high';
+    }
+
+    // Medium warning for client errors
+    if (errorTypes.includes('client') || 
+        errorTypes.includes('timeout') ||
+        (statusCodes && statusCodes.includes('4'))) {
+      return 'medium';
+    }
+
+    // Low warning for other errors
+    return 'low';
   }
 
   /**
@@ -612,7 +700,9 @@ export class VisualizationGenerator {
           ...baseStyle,
           backgroundColor: '#fee2e2', // red-100
           borderColor: '#ef4444',     // red-500
-          textColor: '#991b1b'        // red-800
+          textColor: '#991b1b',       // red-800
+          borderWidth: 3,             // Thicker border for emphasis
+          boxShadow: '0 0 10px rgba(239, 68, 68, 0.3)' // Red glow effect
         };
       default:
         return {
@@ -644,7 +734,9 @@ export class VisualizationGenerator {
         return {
           ...baseStyle,
           strokeWidth: 3,
-          strokeDasharray: '5,5'
+          strokeDasharray: '5,5',
+          filter: 'drop-shadow(0 0 3px rgba(239, 68, 68, 0.5))', // Red glow effect
+          markerEnd: 'url(#error-arrowhead)' // Special error arrowhead
         };
       case 'success':
         return {
