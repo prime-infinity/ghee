@@ -23,8 +23,7 @@ import {
   Code,
   Settings,
   ArrowRight,
-  Zap,
-  Play
+  Zap
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -55,9 +54,6 @@ const EDGE_COLOR_MAP: Record<VisualEdge['type'], string> = {
   error: '#ef4444',   // red-500
   action: '#3b82f6',  // blue-500
   'data-flow': '#8b5cf6', // purple-500
-  'prop-flow': '#f59e0b', // amber-500
-  'state-update': '#06b6d4', // cyan-500
-  'effect-trigger': '#8b5cf6' // purple-500
 };
 
 /**
@@ -72,7 +68,11 @@ const NODE_EXPLANATIONS: Record<PatternNode['type'], string> = {
   component: 'A piece of the user interface',
   error: 'Something that can go wrong',
   function: 'A set of instructions that does something',
-  variable: 'A container that holds information'
+  variable: 'A container that holds information',
+  hook: 'A special function that adds behavior',
+  prop: 'Information passed to a component',
+  state: 'Data that can change over time',
+  effect: 'Something that happens when data changes'
 };
 
 /**
