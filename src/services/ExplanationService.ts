@@ -26,7 +26,7 @@ export class ExplanationService {
     const baseExplanations: Record<string, ElementExplanation> = {
       button: {
         simple: "This is a button you can click!",
-        whatItDoes: "When you click it, something happens in the app",
+        whatItDoes: "It helps you interact with the app when you click it",
         analogy: "Like a doorbell - press it and it does something!",
         moreInfo: "Buttons are how users interact with apps and websites"
       },
@@ -38,7 +38,7 @@ export class ExplanationService {
       },
       api: {
         simple: "This talks to other computers to get information",
-        whatItDoes: "It asks other computers for data and brings it back",
+        whatItDoes: "It asks other computers for data and gets it back",
         analogy: "Like sending a letter and getting a reply back!",
         moreInfo: "APIs help apps get information from the internet"
       },
@@ -152,32 +152,39 @@ export class ExplanationService {
           customized.simple = `This counter shows the ${node.label} number`;
           break;
         case 'api':
-          customized.simple = `This gets ${node.label} information from the internet`;
+          customized.simple = `This talks to other computers to get ${node.label} information`;
           break;
         case 'database':
-          customized.simple = `This database stores ${node.label} information`;
+          customized.simple = `This is where ${node.label} information is stored and kept safe`;
           break;
         case 'function':
-          customized.simple = `This function called "${node.label}" does a specific job`;
+          customized.simple = `This is a set of instructions called "${node.label}" that does a specific job`;
           break;
         case 'variable':
-          customized.simple = `This box called "${node.label}" holds information`;
+          customized.simple = `This is a box called "${node.label}" that holds information`;
           break;
       }
     }
 
-    // Add pattern-specific context
+    // Add pattern-specific context (enhance existing moreInfo)
     if (node.metadata?.patternType) {
-      switch (node.metadata.patternType) {
-        case 'counter':
-          customized.moreInfo = "This is part of a counter pattern that tracks numbers";
-          break;
-        case 'api-call':
-          customized.moreInfo = "This is part of getting data from the internet";
-          break;
-        case 'database':
-          customized.moreInfo = "This is part of saving and loading information";
-          break;
+      const patternInfo = (() => {
+        switch (node.metadata.patternType) {
+          case 'counter':
+            return "This is part of a counter pattern that tracks numbers";
+          case 'api-call':
+            return "This is part of getting data from the internet";
+          case 'database':
+            return "This is part of saving and loading information";
+          default:
+            return null;
+        }
+      })();
+      
+      if (patternInfo) {
+        customized.moreInfo = customized.moreInfo 
+          ? `${customized.moreInfo}. ${patternInfo}`
+          : patternInfo;
       }
     }
 
@@ -209,9 +216,8 @@ export class ExplanationService {
       } else if (label.includes('load') || label.includes('get')) {
         customized.simple = "This shows getting information";
         customized.whatItDoes = "It shows the app loading data it needs";
-      } else {
-        customized.simple = `This shows "${edge.label}" happening`;
       }
+      // For other labels, keep the base explanation from the edge type
     }
 
     return customized;

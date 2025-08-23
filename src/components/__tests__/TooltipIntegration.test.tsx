@@ -11,31 +11,93 @@ import { InteractiveDiagramComponent } from "../InteractiveDiagramComponent";
 import type { DiagramData } from "../../types/visualization";
 import { User, MousePointer, Database, Globe } from "lucide-react";
 
-// Mock React Flow to avoid rendering issues in tests
+// Mock React Flow with more detailed implementation for tooltip testing
+const mockReactFlowInstance = {
+  fitView: vi.fn(),
+};
+
 vi.mock("reactflow", () => ({
   __esModule: true,
-  default: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="react-flow">{children}</div>
-  ),
+  default: ({
+    children,
+    onInit,
+    nodes,
+    edges,
+    nodeTypes,
+    edgeTypes,
+    ...props
+  }: any) => {
+    // Simulate onInit callback
+    React.useEffect(() => {
+      if (onInit) {
+        onInit(mockReactFlowInstance);
+      }
+    }, [onInit]);
+
+    return (
+      <div data-testid="react-flow" {...props}>
+        {/* Render nodes */}
+        {nodes?.map((node: any) => {
+          const NodeComponent = nodeTypes?.custom;
+          return NodeComponent ? (
+            <div key={node.id} data-testid={`node-${node.id}`}>
+              <NodeComponent data={node.data} selected={false} />
+            </div>
+          ) : null;
+        })}
+
+        {/* Render edges */}
+        {edges?.map((edge: any) => {
+          const EdgeComponent = edgeTypes?.custom;
+          return EdgeComponent ? (
+            <div key={edge.id} data-testid={`edge-${edge.id}`}>
+              <EdgeComponent
+                id={edge.id}
+                sourceX={0}
+                sourceY={0}
+                targetX={100}
+                targetY={100}
+                sourcePosition="bottom"
+                targetPosition="top"
+                style={edge.style}
+                data={edge.data}
+                selected={false}
+              />
+            </div>
+          ) : null;
+        })}
+
+        {children}
+      </div>
+    );
+  },
   ReactFlowProvider: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
+    <div data-testid="react-flow-provider">{children}</div>
   ),
-  useNodesState: () => [[], vi.fn(), vi.fn()],
-  useEdgesState: () => [[], vi.fn(), vi.fn()],
+  useNodesState: (initialNodes: any) => [initialNodes, vi.fn(), vi.fn()],
+  useEdgesState: (initialEdges: any) => [initialEdges, vi.fn(), vi.fn()],
+  addEdge: vi.fn(),
   Controls: () => <div data-testid="controls" />,
   MiniMap: () => <div data-testid="minimap" />,
   Background: () => <div data-testid="background" />,
   BackgroundVariant: { Dots: "dots" },
   MarkerType: { ArrowClosed: "arrowclosed" },
   Position: { Top: "top", Bottom: "bottom" },
-  Handle: ({ type, position }: { type: string; position: string }) => (
-    <div data-testid={`handle-${type}-${position}`} />
+  Handle: ({ type, position, className, style }: any) => (
+    <div
+      data-testid={`handle-${type}`}
+      className={className}
+      style={style}
+      data-position={position}
+    />
   ),
   getBezierPath: () => ["M0,0 L100,100", 50, 50],
   EdgeLabelRenderer: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
+    <div data-testid="edge-label-renderer">{children}</div>
   ),
-  BaseEdge: () => <div data-testid="base-edge" />,
+  BaseEdge: ({ path, style }: any) => (
+    <path data-testid="base-edge" d={path} style={style} />
+  ),
 }));
 
 // Mock timers for tooltip delays
@@ -120,12 +182,10 @@ describe("Tooltip Integration", () => {
       });
 
       // Check for child-friendly tooltip content
-      await waitFor(() => {
-        const tooltip = screen.getByRole("tooltip");
-        expect(tooltip).toBeInTheDocument();
-        expect(tooltip).toHaveTextContent(/Click Me.*button.*click/i);
-        expect(tooltip).toHaveTextContent(/doorbell/i); // Should include analogy
-      });
+      const tooltip = screen.getByRole("tooltip");
+      expect(tooltip).toBeInTheDocument();
+      expect(tooltip).toHaveTextContent(/Click Me.*button.*click/i);
+      expect(tooltip).toHaveTextContent(/doorbell/i); // Should include analogy
     });
 
     it("shows child-friendly tooltip for counter nodes on hover", async () => {
@@ -138,11 +198,9 @@ describe("Tooltip Integration", () => {
         vi.advanceTimersByTime(300);
       });
 
-      await waitFor(() => {
-        const tooltip = screen.getByRole("tooltip");
-        expect(tooltip).toHaveTextContent(/Count.*number/i);
-        expect(tooltip).toHaveTextContent(/score counter/i); // Should include analogy
-      });
+      const tooltip = screen.getByRole("tooltip");
+      expect(tooltip).toHaveTextContent(/Count.*number/i);
+      expect(tooltip).toHaveTextContent(/score counter/i); // Should include analogy
     });
 
     it("hides tooltip when mouse leaves node", async () => {
@@ -157,9 +215,7 @@ describe("Tooltip Integration", () => {
         vi.advanceTimersByTime(300);
       });
 
-      await waitFor(() => {
-        expect(screen.getByRole("tooltip")).toBeInTheDocument();
-      });
+      expect(screen.getByRole("tooltip")).toBeInTheDocument();
 
       // Hide tooltip
       fireEvent.mouseLeave(buttonElement);
@@ -167,9 +223,7 @@ describe("Tooltip Integration", () => {
         vi.advanceTimersByTime(200);
       });
 
-      await waitFor(() => {
-        expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-      });
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
     });
   });
 
@@ -184,11 +238,9 @@ describe("Tooltip Integration", () => {
         vi.advanceTimersByTime(300);
       });
 
-      await waitFor(() => {
-        const tooltip = screen.getByRole("tooltip");
-        expect(tooltip).toHaveTextContent(/what happens when you click/i);
-        expect(tooltip).toHaveTextContent(/arrow/i); // Should include analogy
-      });
+      const tooltip = screen.getByRole("tooltip");
+      expect(tooltip).toHaveTextContent(/shows an action happening/i);
+      expect(tooltip).toHaveTextContent(/arrow/i); // Should include analogy
     });
   });
 
@@ -214,11 +266,9 @@ describe("Tooltip Integration", () => {
         vi.advanceTimersByTime(300);
       });
 
-      await waitFor(() => {
-        const tooltip = screen.getByRole("tooltip");
-        expect(tooltip).toHaveAttribute("role", "tooltip");
-        expect(tooltip).toHaveAttribute("aria-hidden", "false");
-      });
+      const tooltip = screen.getByRole("tooltip");
+      expect(tooltip).toHaveAttribute("role", "tooltip");
+      expect(tooltip).toHaveAttribute("aria-hidden", "false");
     });
   });
 
@@ -233,20 +283,18 @@ describe("Tooltip Integration", () => {
         vi.advanceTimersByTime(300);
       });
 
-      await waitFor(() => {
-        const tooltip = screen.getByRole("tooltip");
-        const tooltipText = tooltip.textContent!.toLowerCase();
+      const tooltip = screen.getByRole("tooltip");
+      const tooltipText = tooltip.textContent!.toLowerCase();
 
-        // Should not contain technical terms
-        expect(tooltipText).not.toContain("function");
-        expect(tooltipText).not.toContain("method");
-        expect(tooltipText).not.toContain("object");
-        expect(tooltipText).not.toContain("instance");
-        expect(tooltipText).not.toContain("parameter");
-        expect(tooltipText).not.toContain("callback");
-        expect(tooltipText).not.toContain("async");
-        expect(tooltipText).not.toContain("promise");
-      });
+      // Should not contain technical terms
+      expect(tooltipText).not.toContain("function");
+      expect(tooltipText).not.toContain("method");
+      expect(tooltipText).not.toContain("object");
+      expect(tooltipText).not.toContain("instance");
+      expect(tooltipText).not.toContain("parameter");
+      expect(tooltipText).not.toContain("callback");
+      expect(tooltipText).not.toContain("async");
+      expect(tooltipText).not.toContain("promise");
     });
 
     it("uses positive, encouraging language", async () => {
@@ -259,19 +307,17 @@ describe("Tooltip Integration", () => {
         vi.advanceTimersByTime(300);
       });
 
-      await waitFor(() => {
-        const tooltip = screen.getByRole("tooltip");
-        const tooltipText = tooltip.textContent!.toLowerCase();
+      const tooltip = screen.getByRole("tooltip");
+      const tooltipText = tooltip.textContent!.toLowerCase();
 
-        // Should use positive language
-        expect(tooltipText).toMatch(/can|will|helps|shows|does/);
+      // Should use positive language
+      expect(tooltipText).toMatch(/can|will|helps|shows|does/);
 
-        // Should not use negative or confusing language
-        expect(tooltipText).not.toContain("cannot");
-        expect(tooltipText).not.toContain("fails");
-        expect(tooltipText).not.toContain("broken");
-        expect(tooltipText).not.toContain("wrong");
-      });
+      // Should not use negative or confusing language
+      expect(tooltipText).not.toContain("cannot");
+      expect(tooltipText).not.toContain("fails");
+      expect(tooltipText).not.toContain("broken");
+      expect(tooltipText).not.toContain("wrong");
     });
 
     it("includes helpful analogies in tooltips", async () => {
@@ -284,10 +330,8 @@ describe("Tooltip Integration", () => {
         vi.advanceTimersByTime(300);
       });
 
-      await waitFor(() => {
-        const tooltip = screen.getByRole("tooltip");
-        expect(tooltip.textContent!.toLowerCase()).toContain("doorbell");
-      });
+      const tooltip = screen.getByRole("tooltip");
+      expect(tooltip.textContent!.toLowerCase()).toContain("doorbell");
     });
   });
 });

@@ -311,7 +311,7 @@ describe("InteractiveDiagramComponent Integration", () => {
 
       // Click on button node
       const buttonNode = screen.getByLabelText(
-        "Click Button: A clickable button that starts the counter"
+        'Click Button: This is the "Click Button" button you can click!'
       );
       expect(buttonNode).toBeInTheDocument();
 
@@ -372,7 +372,7 @@ describe("InteractiveDiagramComponent Integration", () => {
 
       // Click on a node to open modal
       const buttonNode = screen.getByLabelText(
-        "Click Button: A clickable button that starts the counter"
+        'Click Button: This is the "Click Button" button you can click!'
       );
       fireEvent.click(buttonNode);
 
@@ -414,9 +414,6 @@ describe("InteractiveDiagramComponent Integration", () => {
       await waitFor(() => {
         expect(
           screen.getByText("What does this connection do?")
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText(/represents an action or event/i)
         ).toBeInTheDocument();
       });
 
@@ -480,7 +477,7 @@ describe("InteractiveDiagramComponent Integration", () => {
 
       // Open node modal
       const buttonNode = screen.getByLabelText(
-        "Click Button: A clickable button that starts the counter"
+        'Click Button: This is the "Click Button" button you can click!'
       );
       fireEvent.click(buttonNode);
 

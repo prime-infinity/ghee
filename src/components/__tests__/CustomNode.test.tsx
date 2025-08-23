@@ -100,10 +100,11 @@ describe("CustomNode", () => {
       render(<CustomNode data={nodeData} selected={false} />);
 
       const nodeContainer = screen.getByRole("button");
-      expect(nodeContainer).toHaveAttribute(
-        "title",
-        "This is a test explanation"
-      );
+      // Check that the node has the correct aria-label (which includes the explanation)
+      expect(nodeContainer).toHaveAttribute("aria-label");
+      const ariaLabel = nodeContainer.getAttribute("aria-label");
+      expect(ariaLabel).toContain("Test Button");
+      expect(ariaLabel).toContain("button you can click");
     });
 
     it("renders input and output handles", () => {
@@ -272,7 +273,7 @@ describe("CustomNode", () => {
   });
 
   describe("Accessibility", () => {
-    it("has proper button role and title attribute", () => {
+    it("has proper button role and aria-label", () => {
       const visualNode = createMockVisualNode({
         explanation: "Accessible explanation",
       });
@@ -281,7 +282,9 @@ describe("CustomNode", () => {
       render(<CustomNode data={nodeData} selected={false} />);
 
       const nodeContainer = screen.getByRole("button");
-      expect(nodeContainer).toHaveAttribute("title", "Accessible explanation");
+      expect(nodeContainer).toHaveAttribute("aria-label");
+      const ariaLabel = nodeContainer.getAttribute("aria-label");
+      expect(ariaLabel).toContain("Test Button");
     });
 
     it("supports keyboard interaction", () => {
@@ -300,7 +303,7 @@ describe("CustomNode", () => {
   });
 
   describe("Hover Tooltip", () => {
-    it("displays hover tooltip with correct content", () => {
+    it("wraps node in tooltip component", () => {
       const visualNode = createMockVisualNode({
         explanation: "Detailed explanation for tooltip",
       });
@@ -308,19 +311,22 @@ describe("CustomNode", () => {
 
       render(<CustomNode data={nodeData} selected={false} />);
 
-      const tooltip = screen.getByText("Detailed explanation for tooltip");
-      expect(tooltip).toBeInTheDocument();
-      expect(tooltip).toHaveClass("opacity-0", "group-hover:opacity-100");
+      // Check that the button is wrapped in a tooltip container
+      const button = screen.getByRole("button");
+      const tooltipContainer = button.closest(".relative.inline-block");
+      expect(tooltipContainer).toBeInTheDocument();
     });
 
-    it("positions tooltip correctly", () => {
+    it("uses explanation service for tooltip content", () => {
       const visualNode = createMockVisualNode();
       const nodeData = createMockNodeData(visualNode);
 
       render(<CustomNode data={nodeData} selected={false} />);
 
-      const tooltip = screen.getByText(visualNode.explanation);
-      expect(tooltip).toHaveClass("absolute", "bottom-full", "left-1/2");
+      // Check that the aria-label contains the processed explanation
+      const button = screen.getByRole("button");
+      const ariaLabel = button.getAttribute("aria-label");
+      expect(ariaLabel).toContain("button you can click");
     });
   });
 });
