@@ -11,6 +11,7 @@ import { CounterPatternMatcher } from './matchers/CounterPatternMatcher';
 import { ApiCallPatternMatcher } from './matchers/ApiCallPatternMatcher';
 import { DatabasePatternMatcher } from './matchers/DatabasePatternMatcher';
 import { ErrorHandlingPatternMatcher } from './matchers/ErrorHandlingPatternMatcher';
+import { ReactComponentPatternMatcher } from './matchers/ReactComponentPatternMatcher';
 
 /**
  * Base interface for pattern matchers
@@ -73,6 +74,7 @@ export class PatternRecognitionEngine {
     this.registerMatcher(new ApiCallPatternMatcher());
     this.registerMatcher(new DatabasePatternMatcher());
     this.registerMatcher(new ErrorHandlingPatternMatcher());
+    this.registerMatcher(new ReactComponentPatternMatcher());
   }
 
   /**
@@ -440,6 +442,8 @@ export class PatternRecognitionEngine {
       return this.generateDatabaseConnections(match, nodes);
     } else if (match.type === 'error-handling') {
       return this.generateErrorHandlingConnections(match, nodes);
+    } else if (match.type === 'react-component') {
+      return this.generateReactComponentConnections(match, nodes);
     }
     
     // Basic sequential connections for other patterns
@@ -685,6 +689,11 @@ export class PatternRecognitionEngine {
       return this.determineErrorHandlingNodeType(node, match);
     }
     
+    // Check for React component patterns
+    if (match.type === 'react-component') {
+      return this.determineReactComponentNodeType(node, match);
+    }
+    
     // Basic node type determination
     if (t.isFunctionDeclaration(node) || t.isArrowFunctionExpression(node)) {
       return 'function';
@@ -799,6 +808,64 @@ export class PatternRecognitionEngine {
     
     // Default for error handling patterns
     return 'error';
+  }
+
+  /**
+   * Determine node type for React component patterns
+   * @param node - AST node
+   * @param match - Pattern match context
+   * @returns Pattern node type
+   */
+  private determineReactComponentNodeType(node: Node, match: PatternMatch): PatternNode['type'] {
+    const label = this.generateNodeLabel(node, match).toLowerCase();
+    
+    // Check for hooks
+    if (t.isCallExpression(node) && t.isIdentifier(node.callee)) {
+      const hookName = node.callee.name;
+      if (hookName.startsWith('use')) {
+        if (hookName === 'useState') {
+          return 'state';
+        } else if (hookName === 'useEffect') {
+          return 'effect';
+        } else {
+          return 'hook';
+        }
+      }
+    }
+    
+    // Check for variable declarations with hooks
+    if (t.isVariableDeclarator(node) && 
+        t.isCallExpression(node.init) &&
+        t.isIdentifier(node.init.callee) &&
+        node.init.callee.name.startsWith('use')) {
+      
+      if (node.init.callee.name === 'useState') {
+        return 'state';
+      } else if (node.init.callee.name === 'useEffect') {
+        return 'effect';
+      } else {
+        return 'hook';
+      }
+    }
+    
+    // Check for props (function parameters)
+    if (match.metadata.props?.includes(label)) {
+      return 'prop';
+    }
+    
+    // Check for child components
+    if (match.metadata.childComponents?.includes(label)) {
+      return 'component';
+    }
+    
+    // Check for main component
+    if (t.isFunctionDeclaration(node) || 
+        (t.isVariableDeclarator(node) && t.isArrowFunctionExpression(node.init))) {
+      return 'component';
+    }
+    
+    // Default for React component patterns
+    return 'component';
   }
 
   /**
@@ -953,6 +1020,110 @@ export class PatternRecognitionEngine {
           errorTypes: match.metadata.errorTypes || ['exception']
         }
       });
+    }
+    
+    return connections;
+  }
+
+  /**
+   * Generate connections for React component patterns
+   * @param match - The React component pattern match
+   * @param nodes - Generated pattern nodes
+   * @returns Array of pattern connections
+   */
+  private generateReactComponentConnections(
+    match: PatternMatch, 
+    nodes: PatternNode[]
+  ): PatternConnection[] {
+    const connections: PatternConnection[] = [];
+    
+    if (nodes.length < 2) return connections;
+    
+    let connectionIndex = 0;
+    
+    // Find different types of nodes
+    const componentNode = nodes.find(n => n.type === 'component');
+    const stateNodes = nodes.filter(n => n.type === 'state' || n.type === 'hook');
+    const propNodes = nodes.filter(n => n.type === 'prop');
+    const effectNodes = nodes.filter(n => n.type === 'effect');
+    const childNodes = nodes.filter(n => n.label && match.metadata.childComponents?.includes(n.label));
+    
+    // Props to component connections
+    if (componentNode && propNodes.length > 0) {
+      propNodes.forEach(propNode => {
+        connections.push({
+          id: `connection-${match.type}-${connectionIndex++}`,
+          sourceId: propNode.id,
+          targetId: componentNode.id,
+          type: 'prop-flow',
+          label: 'passes to',
+          properties: {
+            propName: propNode.label
+          }
+        });
+      });
+    }
+    
+    // State to component connections
+    if (componentNode && stateNodes.length > 0) {
+      stateNodes.forEach(stateNode => {
+        connections.push({
+          id: `connection-${match.type}-${connectionIndex++}`,
+          sourceId: stateNode.id,
+          targetId: componentNode.id,
+          type: 'state-update',
+          label: 'updates',
+          properties: {
+            stateName: stateNode.label
+          }
+        });
+      });
+    }
+    
+    // Effect to component connections
+    if (componentNode && effectNodes.length > 0) {
+      effectNodes.forEach(effectNode => {
+        connections.push({
+          id: `connection-${match.type}-${connectionIndex++}`,
+          sourceId: componentNode.id,
+          targetId: effectNode.id,
+          type: 'effect-trigger',
+          label: 'triggers',
+          properties: {
+            effectType: effectNode.label
+          }
+        });
+      });
+    }
+    
+    // Component to child component connections
+    if (componentNode && childNodes.length > 0) {
+      childNodes.forEach(childNode => {
+        connections.push({
+          id: `connection-${match.type}-${connectionIndex++}`,
+          sourceId: componentNode.id,
+          targetId: childNode.id,
+          type: 'data-flow',
+          label: 'renders',
+          properties: {
+            childComponent: childNode.label
+          }
+        });
+      });
+    }
+    
+    // If no specific connections, create basic flow
+    if (connections.length === 0 && nodes.length >= 2) {
+      for (let i = 0; i < nodes.length - 1; i++) {
+        connections.push({
+          id: `connection-${match.type}-${connectionIndex++}`,
+          sourceId: nodes[i].id,
+          targetId: nodes[i + 1].id,
+          type: 'control-flow',
+          label: 'flows to',
+          properties: {}
+        });
+      }
     }
     
     return connections;

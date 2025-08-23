@@ -5,7 +5,7 @@ export interface RecognizedPattern {
   /** Unique identifier for the pattern */
   id: string;
   /** Type of pattern recognized */
-  type: 'counter' | 'api-call' | 'database' | 'component-lifecycle' | 'error-handling';
+  type: 'counter' | 'api-call' | 'database' | 'component-lifecycle' | 'error-handling' | 'react-component';
   /** Nodes that make up this pattern */
   nodes: PatternNode[];
   /** Connections between nodes in this pattern */
@@ -21,7 +21,7 @@ export interface PatternNode {
   /** Unique identifier for the node */
   id: string;
   /** Type of node */
-  type: 'button' | 'counter' | 'api' | 'database' | 'user' | 'component' | 'error' | 'function' | 'variable';
+  type: 'button' | 'counter' | 'api' | 'database' | 'user' | 'component' | 'error' | 'function' | 'variable' | 'hook' | 'prop' | 'state' | 'effect';
   /** Display label for the node */
   label: string;
   /** Position in the source code */
@@ -41,7 +41,7 @@ export interface PatternConnection {
   /** Target node ID */
   targetId: string;
   /** Type of connection */
-  type: 'data-flow' | 'control-flow' | 'event' | 'error-path' | 'success-path';
+  type: 'data-flow' | 'control-flow' | 'event' | 'error-path' | 'success-path' | 'prop-flow' | 'state-update' | 'effect-trigger';
   /** Label describing the connection */
   label: string;
   /** Additional properties for the connection */
@@ -92,6 +92,26 @@ export interface PatternMetadata {
   methodName?: string;
   /** Model name for ORM operations */
   modelName?: string;
+  
+  // React Component Pattern specific properties
+  /** Component name */
+  componentName?: string;
+  /** Props passed to the component */
+  props?: string[];
+  /** State variables in the component */
+  stateVariables?: string[];
+  /** Effect hooks in the component */
+  effects?: string[];
+  /** Whether component has lifecycle methods */
+  hasLifecycleMethods?: boolean;
+  /** Whether component uses hooks */
+  usesHooks?: boolean;
+  /** Child components rendered */
+  childComponents?: string[];
+  /** Parent component (if detected) */
+  parentComponent?: string;
+  /** Whether component handles re-rendering */
+  handlesRerendering?: boolean;
 }
 
 /**

@@ -84,7 +84,7 @@ describe('PatternRecognitionEngine', () => {
       const types = engine.getRegisteredPatternTypes();
       expect(types).toContain('counter');
       expect(types).toContain('api-call');
-      expect(types).toHaveLength(4); // Now includes database and error-handling matchers
+      expect(types).toHaveLength(5); // Now includes database, error-handling, and react-component matchers
     });
 
     it('should replace existing matcher for same pattern type', () => {
@@ -94,8 +94,8 @@ describe('PatternRecognitionEngine', () => {
       engine.registerMatcher(firstMatcher);
       engine.registerMatcher(secondMatcher);
       
-      // Should still have 4 types: 'counter' (replaced), 'api-call', 'database', and 'error-handling' (built-in)
-      expect(engine.getRegisteredPatternTypes()).toHaveLength(4);
+      // Should still have 5 types: 'counter' (replaced), 'api-call', 'database', 'error-handling', and 'react-component' (built-in)
+      expect(engine.getRegisteredPatternTypes()).toHaveLength(5);
       expect(engine.getRegisteredPatternTypes()).toContain('counter');
       expect(engine.getRegisteredPatternTypes()).toContain('api-call');
     });
@@ -376,11 +376,13 @@ describe('PatternRecognitionEngine', () => {
       const parseResult = await astParser.parseCode(code);
       const patterns = engine.recognizePatterns(parseResult.ast, code);
       
-      expect(patterns).toHaveLength(1);
-      expect(patterns[0].type).toBe('counter');
-      expect(patterns[0].metadata.confidence).toBeGreaterThan(0.6);
-      expect(patterns[0].metadata.variables).toContain('count');
-      expect(patterns[0].metadata.variables).toContain('setCount');
+      expect(patterns.length).toBeGreaterThan(0);
+      const counterPattern = patterns.find(p => p.type === 'counter');
+      expect(counterPattern).toBeDefined();
+      expect(counterPattern!.type).toBe('counter');
+      expect(counterPattern!.metadata.confidence).toBeGreaterThan(0.6);
+      expect(counterPattern!.metadata.variables).toContain('count');
+      expect(counterPattern!.metadata.variables).toContain('setCount');
     });
 
     it('should not recognize incomplete counter patterns', async () => {
@@ -397,7 +399,9 @@ describe('PatternRecognitionEngine', () => {
       const parseResult = await astParser.parseCode(code);
       const patterns = engine.recognizePatterns(parseResult.ast, code);
       
-      expect(patterns).toHaveLength(0); // No onClick, so no counter pattern
+      // Should not have counter pattern, but might have react-component pattern
+      const counterPattern = patterns.find(p => p.type === 'counter');
+      expect(counterPattern).toBeUndefined(); // No onClick, so no counter pattern
     });
   });
 

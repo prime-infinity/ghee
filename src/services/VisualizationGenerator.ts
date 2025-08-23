@@ -20,7 +20,11 @@ import {
   Component, 
   AlertTriangle, 
   Variable,
-  Code
+  Code,
+  Settings,
+  ArrowRight,
+  Zap,
+  Play
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -36,7 +40,11 @@ const ICON_MAP: Record<PatternNode['type'], LucideIcon> = {
   component: Component,
   error: AlertTriangle,
   function: Code,
-  variable: Variable
+  variable: Variable,
+  hook: Settings,
+  prop: ArrowRight,
+  state: Variable,
+  effect: Zap
 };
 
 /**
@@ -46,7 +54,10 @@ const EDGE_COLOR_MAP: Record<VisualEdge['type'], string> = {
   success: '#10b981', // green-500
   error: '#ef4444',   // red-500
   action: '#3b82f6',  // blue-500
-  'data-flow': '#8b5cf6' // purple-500
+  'data-flow': '#8b5cf6', // purple-500
+  'prop-flow': '#f59e0b', // amber-500
+  'state-update': '#06b6d4', // cyan-500
+  'effect-trigger': '#8b5cf6' // purple-500
 };
 
 /**
