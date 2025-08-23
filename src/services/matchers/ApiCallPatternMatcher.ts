@@ -92,7 +92,7 @@ export class ApiCallPatternMatcher implements PatternMatcher {
       return null;
     }
     
-    const fetchNode = node;
+    // const fetchNode = node;
 
     const involvedNodes: Node[] = [node];
     const variables: string[] = [];
@@ -456,7 +456,7 @@ export class ApiCallPatternMatcher implements PatternMatcher {
    * @param context - Traversal context
    * @returns Chain handling information
    */
-  private findPromiseChainHandling(apiCallNode: Node, context: TraversalContext): {
+  private findPromiseChainHandling(_apiCallNode: Node, _context: TraversalContext): {
     hasSuccess: boolean;
     hasError: boolean;
     successHandlers: string[];
@@ -468,7 +468,7 @@ export class ApiCallPatternMatcher implements PatternMatcher {
     functions: string[];
   } | null {
     // Find all promise chain calls in the current context
-    const chainCalls = this.findAllChainCalls(context);
+    const chainCalls = this.findAllChainCalls(_context);
     if (chainCalls.length === 0) return null;
 
     const result = {
@@ -587,28 +587,28 @@ export class ApiCallPatternMatcher implements PatternMatcher {
    * @param context - Traversal context
    * @returns Parent chain node or null
    */
-  private findChainParent(node: Node, context: TraversalContext): Node | null {
-    // For promise chains, we need to find the outermost call expression in the chain
-    // Look through ancestors to find the topmost call expression in a chain
-    let chainRoot: Node | null = null;
-    
-    for (let i = context.ancestors.length - 1; i >= 0; i--) {
-      const ancestor = context.ancestors[i];
-      
-      // Look for call expressions with member expressions (method calls)
-      if (t.isCallExpression(ancestor) && t.isMemberExpression(ancestor.callee)) {
-        // Check if this is part of a promise chain (.then, .catch, .finally)
-        if (t.isIdentifier(ancestor.callee.property)) {
-          const methodName = ancestor.callee.property.name;
-          if (['then', 'catch', 'finally'].includes(methodName)) {
-            chainRoot = ancestor;
-          }
-        }
-      }
-    }
-    
-    return chainRoot;
-  }
+  // private findChainParent(_node: Node, _context: TraversalContext): Node | null {
+  //   // For promise chains, we need to find the outermost call expression in the chain
+  //   // Look through ancestors to find the topmost call expression in a chain
+  //   let chainRoot: Node | null = null;
+  //   
+  //   for (let i = _context.ancestors.length - 1; i >= 0; i--) {
+  //     const ancestor = _context.ancestors[i];
+  //     
+  //     // Look for call expressions with member expressions (method calls)
+  //     if (t.isCallExpression(ancestor) && t.isMemberExpression(ancestor.callee)) {
+  //       // Check if this is part of a promise chain (.then, .catch, .finally)
+  //       if (t.isIdentifier(ancestor.callee.property)) {
+  //         const methodName = ancestor.callee.property.name;
+  //         if (['then', 'catch', 'finally'].includes(methodName)) {
+  //           chainRoot = ancestor;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   
+  //   return chainRoot;
+  // }
 
   /**
    * Find await expression parent
@@ -683,26 +683,26 @@ export class ApiCallPatternMatcher implements PatternMatcher {
    * @param chainNode - A node in the promise chain (.then, .catch, etc.)
    * @returns The fetch call expression if found
    */
-  private findFetchInChain(chainNode: t.CallExpression): t.CallExpression | null {
-    let current = chainNode;
-    
-    // Traverse backwards through the chain to find the root fetch call
-    while (current && t.isCallExpression(current) && t.isMemberExpression(current.callee)) {
-      // Move to the object of the member expression (the left side of the dot)
-      const object = current.callee.object;
-      
-      if (t.isCallExpression(object)) {
-        if (t.isIdentifier(object.callee) && object.callee.name === 'fetch') {
-          return object; // Found the fetch call
-        }
-        current = object; // Continue traversing
-      } else {
-        break; // Not a call expression, stop traversing
-      }
-    }
-    
-    return null;
-  }
+  // private findFetchInChain(_chainNode: t.CallExpression): t.CallExpression | null {
+  //   let current = _chainNode;
+  //   
+  //   // Traverse backwards through the chain to find the root fetch call
+  //   while (current && t.isCallExpression(current) && t.isMemberExpression(current.callee)) {
+  //     // Move to the object of the member expression (the left side of the dot)
+  //     const object = current.callee.object;
+  //     
+  //     if (t.isCallExpression(object)) {
+  //       if (t.isIdentifier(object.callee) && object.callee.name === 'fetch') {
+  //         return object; // Found the fetch call
+  //       }
+  //       current = object; // Continue traversing
+  //     } else {
+  //       break; // Not a call expression, stop traversing
+  //     }
+  //   }
+  //   
+  //   return null;
+  // }
 
   /**
    * Find all promise chain calls in the current context

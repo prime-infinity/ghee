@@ -418,7 +418,7 @@ export class VisualizationGenerator {
    */
   private enhanceErrorPathLabel(
     connection: PatternConnection,
-    pattern: RecognizedPattern
+    _pattern: RecognizedPattern
   ): string {
     const baseLabel = connection.label;
     const errorTypes = connection.properties.errorTypes || [];
@@ -461,7 +461,7 @@ export class VisualizationGenerator {
    */
   private determineWarningLevel(
     connection: PatternConnection,
-    pattern: RecognizedPattern
+    _pattern: RecognizedPattern
   ): 'low' | 'medium' | 'high' {
     const errorTypes = connection.properties.errorTypes || [];
     const statusCodes = connection.properties.statusCodes;

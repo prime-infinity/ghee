@@ -21,7 +21,7 @@ export const CustomNode: React.FC<NodeProps<CustomNodeData>> = ({
   selected,
 }) => {
   const { visualNode, onClick } = data;
-  const { icon: Icon, label, explanation, style } = visualNode;
+  const { icon: Icon, label, explanation: _explanation, style } = visualNode;
 
   const handleClick = () => {
     onClick(visualNode);

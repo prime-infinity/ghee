@@ -80,20 +80,20 @@ export const EdgeDetailsModal: React.FC<EdgeDetailsModalProps> = ({
     }
   };
 
-  const getTypeDescription = (edgeType: string) => {
-    switch (edgeType) {
-      case "success":
-        return "This shows what happens when everything goes right. The green color means success!";
-      case "error":
-        return "This shows what happens when something goes wrong. The red color means there's an error to handle.";
-      case "action":
-        return "This represents an action or event, like clicking a button or triggering something.";
-      case "data-flow":
-        return "This shows how information moves from one part of the code to another.";
-      default:
-        return "This connection shows how different parts of the code work together.";
-    }
-  };
+  // const getTypeDescription = (_edgeType: string) => {
+  //   switch (_edgeType) {
+  //     case "success":
+  //       return "This shows what happens when everything goes right. The green color means success!";
+  //     case "error":
+  //       return "This shows what happens when something goes wrong. The red color means there's an error to handle.";
+  //     case "action":
+  //       return "This represents an action or event, like clicking a button or triggering something.";
+  //     case "data-flow":
+  //       return "This shows how information moves from one part of the code to another.";
+  //     default:
+  //       return "This connection shows how different parts of the code work together.";
+  //   }
+  // };
 
   const getTypeColor = (edgeType: string) => {
     switch (edgeType) {

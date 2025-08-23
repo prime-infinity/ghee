@@ -58,30 +58,30 @@ export const NodeDetailsModal: React.FC<NodeDetailsModalProps> = ({
     };
   }, [isOpen, onClose]);
 
-  const getTypeDescription = (nodeType: string) => {
-    switch (nodeType) {
-      case "button":
-        return "An interactive element that users can click to trigger actions";
-      case "counter":
-        return "A numeric value that keeps track of something, like how many times a button was clicked";
-      case "api":
-        return "A connection to the internet that fetches or sends data to other services";
-      case "database":
-        return "A storage system where information is saved and retrieved";
-      case "user":
-        return "Represents a person using the application";
-      case "component":
-        return "A reusable piece of the user interface";
-      case "error":
-        return "Something that can go wrong and needs to be handled";
-      case "function":
-        return "A set of instructions that performs a specific task";
-      case "variable":
-        return "A container that holds information or data";
-      default:
-        return "A part of the code that does something specific";
-    }
-  };
+  // const getTypeDescription = (_nodeType: string) => {
+  //   switch (_nodeType) {
+  //     case "button":
+  //       return "An interactive element that users can click to trigger actions";
+  //     case "counter":
+  //       return "A numeric value that keeps track of something, like how many times a button was clicked";
+  //     case "api":
+  //       return "A connection to the internet that fetches or sends data to other services";
+  //     case "database":
+  //       return "A storage system where information is saved and retrieved";
+  //     case "user":
+  //       return "Represents a person using the application";
+  //     case "component":
+  //       return "A reusable piece of the user interface";
+  //     case "error":
+  //       return "Something that can go wrong and needs to be handled";
+  //     case "function":
+  //       return "A set of instructions that performs a specific task";
+  //     case "variable":
+  //       return "A container that holds information or data";
+  //     default:
+  //       return "A part of the code that does something specific";
+  //   }
+  // };
 
   return (
     <div

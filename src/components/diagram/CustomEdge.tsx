@@ -21,7 +21,7 @@ export interface CustomEdgeData {
  * Custom edge component for displaying visual edges with labels and interactions
  */
 export const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
-  id,
+  id: _id,
   sourceX,
   sourceY,
   targetX,

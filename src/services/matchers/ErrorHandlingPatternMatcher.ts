@@ -58,7 +58,7 @@ export class ErrorHandlingPatternMatcher implements PatternMatcher {
    * @param context - Traversal context
    * @returns Pattern match if found, null otherwise
    */
-  private findTryCatchPattern(node: Node, context: TraversalContext): PatternMatch | null {
+  private findTryCatchPattern(node: Node, _context: TraversalContext): PatternMatch | null {
     if (!t.isTryStatement(node)) {
       return null;
     }

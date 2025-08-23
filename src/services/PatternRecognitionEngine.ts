@@ -305,7 +305,7 @@ export class PatternRecognitionEngine {
    */
   private enhanceApiCallNodeProperties(
     properties: Record<string, any>, 
-    node: Node, 
+    _node: Node, 
     match: PatternMatch, 
     label: string
   ): void {

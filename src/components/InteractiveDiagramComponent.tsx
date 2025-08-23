@@ -1,9 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import ReactFlow, {
-  Node,
-  Edge,
   addEdge,
-  Connection,
   useNodesState,
   useEdgesState,
   Controls,
@@ -11,9 +8,14 @@ import ReactFlow, {
   Background,
   BackgroundVariant,
   ReactFlowProvider,
+  MarkerType,
+} from "reactflow";
+import type {
+  Node,
+  Edge,
+  Connection,
   NodeTypes,
   EdgeTypes,
-  MarkerType,
   ReactFlowInstance,
 } from "reactflow";
 import "reactflow/dist/style.css";

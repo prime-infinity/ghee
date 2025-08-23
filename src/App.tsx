@@ -4,7 +4,10 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Layout } from "./components/Layout";
 import { CodeInputComponent } from "./components/CodeInputComponent";
 import { InteractiveDiagramComponent } from "./components/InteractiveDiagramComponent";
-import { CodeVisualizationService } from "./services/CodeVisualizationService";
+import {
+  CodeVisualizationService,
+  type ProcessingStage,
+} from "./services/CodeVisualizationService";
 import type { VisualNode, VisualEdge } from "./types";
 
 /**
@@ -27,7 +30,7 @@ const AppContent: React.FC = () => {
       try {
         const result = await visualizationService.visualizeCode(
           code,
-          (stage, progress) => {
+          (stage: ProcessingStage, _progress: number) => {
             dispatch({ type: "SET_PROCESSING_STAGE", payload: stage });
           }
         );

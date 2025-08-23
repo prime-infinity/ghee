@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Maximize2, Minimize2, RotateCcw } from "lucide-react";
-import {
-  InteractiveDiagramComponent,
-  InteractiveDiagramProps,
-} from "../InteractiveDiagramComponent";
+import { InteractiveDiagramComponent } from "../InteractiveDiagramComponent";
+import type { InteractiveDiagramProps } from "../InteractiveDiagramComponent";
 
 /**
  * Props for the ResponsiveDiagramWrapper component
