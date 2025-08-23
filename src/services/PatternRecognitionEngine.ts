@@ -927,88 +927,32 @@ export class PatternRecognitionEngine {
     
     if (nodes.length < 2) return connections;
     
-    // Find different types of nodes
-    const tryNode = nodes.find(n => n.label.toLowerCase().includes('try') || n.properties.isTryBlock);
-    const catchNode = nodes.find(n => n.type === 'error' || n.label.toLowerCase().includes('catch') || n.label.toLowerCase().includes('error'));
-    const finallyNode = nodes.find(n => n.label.toLowerCase().includes('finally') || n.properties.isFinallyBlock);
-    const operationNodes = nodes.filter(n => n !== tryNode && n !== catchNode && n !== finallyNode);
-    
     let connectionIndex = 0;
     
-    // Operation to try block connection
-    if (operationNodes.length > 0 && tryNode) {
-      operationNodes.forEach(opNode => {
-        connections.push({
-          id: `connection-${match.type}-${connectionIndex++}`,
-          sourceId: opNode.id,
-          targetId: tryNode.id,
-          type: 'control-flow',
-          label: 'executes in',
-          properties: {
-            riskLevel: match.metadata.riskyOperations?.length > 0 ? 'high' : 'medium'
-          }
-        });
-      });
-    }
-    
-    // Try to catch connection (error path)
-    if (tryNode && catchNode) {
-      connections.push({
-        id: `connection-${match.type}-${connectionIndex++}`,
-        sourceId: tryNode.id,
-        targetId: catchNode.id,
-        type: 'error-path',
-        label: 'on error',
-        properties: {
-          errorTypes: match.metadata.errorTypes || ['exception'],
-          recoveryActions: match.metadata.recoveryActions || []
-        }
-      });
-    }
-    
-    // Try to finally connection (always executes)
-    if (tryNode && finallyNode) {
-      connections.push({
-        id: `connection-${match.type}-${connectionIndex++}`,
-        sourceId: tryNode.id,
-        targetId: finallyNode.id,
-        type: 'control-flow',
-        label: 'always executes',
-        properties: {
-          executionType: 'always',
-          cleanupActions: match.metadata.cleanupActions || []
-        }
-      });
-    }
-    
-    // Catch to finally connection
-    if (catchNode && finallyNode) {
-      connections.push({
-        id: `connection-${match.type}-${connectionIndex++}`,
-        sourceId: catchNode.id,
-        targetId: finallyNode.id,
-        type: 'control-flow',
-        label: 'then cleanup',
-        properties: {
-          executionType: 'after-error',
-          cleanupActions: match.metadata.cleanupActions || []
-        }
-      });
-    }
-    
-    // If no specific structure, create basic error flow
-    if (connections.length === 0 && nodes.length >= 2) {
-      for (let i = 0; i < nodes.length - 1; i++) {
-        const connectionType = nodes[i + 1].type === 'error' ? 'error-path' : 'control-flow';
-        connections.push({
-          id: `connection-${match.type}-${connectionIndex++}`,
-          sourceId: nodes[i].id,
-          targetId: nodes[i + 1].id,
-          type: connectionType,
-          label: connectionType === 'error-path' ? 'on error' : 'flows to',
-          properties: {}
-        });
+    // Create simple sequential connections for error handling patterns
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const sourceNode = nodes[i];
+      const targetNode = nodes[i + 1];
+      
+      // Determine connection type based on target node
+      let connectionType: PatternConnection['type'] = 'control-flow';
+      let label = 'flows to';
+      
+      if (targetNode.type === 'error') {
+        connectionType = 'error-path';
+        label = 'on error';
       }
+      
+      connections.push({
+        id: `connection-${match.type}-${connectionIndex++}`,
+        sourceId: sourceNode.id,
+        targetId: targetNode.id,
+        type: connectionType,
+        label,
+        properties: {
+          errorTypes: match.metadata.errorTypes || ['exception']
+        }
+      });
     }
     
     return connections;
