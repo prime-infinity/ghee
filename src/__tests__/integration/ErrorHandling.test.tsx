@@ -7,7 +7,56 @@ import { ErrorHandlerService } from "../../services/ErrorHandlerService";
 import App from "../../App";
 
 // Mock the services
-vi.mock("../../services/CodeVisualizationService");
+vi.mock("../../services/CodeVisualizationService", () => {
+  const mockPerformanceService = {
+    shouldProcessCode: vi.fn().mockReturnValue({
+      shouldProcess: true,
+      warnings: [],
+      suggestions: [],
+    }),
+    analyzeCodeComplexity: vi.fn().mockReturnValue({
+      lines: 1,
+      functions: 0,
+      variables: 1,
+      nestingDepth: 1,
+      imports: 0,
+      reactHooks: 0,
+      estimatedProcessingTime: 1000,
+      level: "simple",
+    }),
+  };
+
+  return {
+    CodeVisualizationService: vi.fn().mockImplementation(() => ({
+      visualizeCode: vi.fn().mockResolvedValue({
+        success: true,
+        diagramData: {
+          nodes: [],
+          edges: [],
+          layout: {
+            direction: "horizontal",
+            spacing: { x: 150, y: 100 },
+          },
+        },
+        errors: [],
+      }),
+      getPerformanceService: vi.fn().mockReturnValue(mockPerformanceService),
+      analyzeCodeComplexity: vi.fn().mockReturnValue({
+        lines: 1,
+        functions: 0,
+        variables: 1,
+        nestingDepth: 1,
+        imports: 0,
+        reactHooks: 0,
+        estimatedProcessingTime: 1000,
+        level: "simple",
+      }),
+      processing: false,
+      cancelProcessing: vi.fn(),
+    })),
+  };
+});
+
 vi.mock("../../services/ErrorHandlerService");
 
 const MockedCodeVisualizationService =

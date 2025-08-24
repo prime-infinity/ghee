@@ -419,6 +419,11 @@ describe('ApiCallPatternMatcher', () => {
       `;
       const ast = parse(code, { sourceType: 'module' });
       
+      // The entire expression is a chain, so we should test the whole chain
+      const chainExpression = (ast.program.body[0] as any).expression;
+      expect(chainExpression).toBeTruthy();
+
+      // Find the axios call within the chain
       const findAxiosCall = (node: Node): Node | null => {
         if (node.type === 'CallExpression' && 
             (node as any).callee?.type === 'MemberExpression' &&
@@ -443,12 +448,25 @@ describe('ApiCallPatternMatcher', () => {
         return null;
       };
 
-      const axiosCall = findAxiosCall(ast);
+      const axiosCall = findAxiosCall(chainExpression);
       expect(axiosCall).toBeTruthy();
 
+      // Build the context with all chain calls as ancestors
+      const buildChainAncestors = (node: Node, ancestors: Node[] = []): Node[] => {
+        if (node.type === 'CallExpression' && (node as any).callee?.type === 'MemberExpression') {
+          const methodName = (node as any).callee?.property?.name;
+          if (['then', 'catch', 'finally'].includes(methodName)) {
+            ancestors.push(node);
+            return buildChainAncestors((node as any).callee.object, ancestors);
+          }
+        }
+        return ancestors;
+      };
+
+      const chainAncestors = buildChainAncestors(chainExpression);
       const contextWithChain: TraversalContext = {
         ...mockContext,
-        ancestors: [ast, ast.program, ast.program.body[0], (ast.program.body[0] as any).expression]
+        ancestors: [ast, ast.program, ast.program.body[0], chainExpression, ...chainAncestors]
       };
 
       const matches = matcher.match(axiosCall!, contextWithChain);
