@@ -310,7 +310,7 @@ export const InteractiveDiagramComponent: React.FC<InteractiveDiagramProps> =
       return (
         <div
           ref={diagramRef}
-          className={`h-96 bg-white rounded-lg border border-gray-200 ${className}`}
+          className={`h-80 md:h-96 bg-white rounded-lg border border-gray-200 transition-smooth ${className}`}
           role="application"
           aria-label={`Interactive code diagram with ${diagramData.nodes.length} nodes and ${diagramData.edges.length} connections`}
           aria-describedby="diagram-instructions"
@@ -328,11 +328,16 @@ export const InteractiveDiagramComponent: React.FC<InteractiveDiagramProps> =
           {/* Performance warning for large diagrams */}
           {isLargeDiagram && (
             <div
-              className="bg-yellow-50 border-b border-yellow-200 px-4 py-2 text-sm text-yellow-800"
+              className="bg-yellow-50 border-b border-yellow-200 px-3 md:px-4 py-2 text-xs md:text-sm text-yellow-800 animate-fade-in"
               role="status"
             >
-              Large diagram detected ({diagramData.nodes.length} nodes) - some
-              features disabled for better performance
+              <span className="hidden sm:inline">
+                Large diagram detected ({diagramData.nodes.length} nodes) - some
+                features disabled for better performance
+              </span>
+              <span className="sm:hidden">
+                Large diagram - performance mode enabled
+              </span>
             </div>
           )}
 
@@ -367,14 +372,14 @@ export const InteractiveDiagramComponent: React.FC<InteractiveDiagramProps> =
               <Controls
                 position="top-right"
                 showInteractive={false}
-                className="bg-white border border-gray-200 rounded-md shadow-sm"
+                className="bg-white border border-gray-200 rounded-md shadow-sm !text-xs md:!text-sm"
                 aria-label="Diagram controls"
               />
-              {/* Only show MiniMap for smaller diagrams to improve performance */}
+              {/* Only show MiniMap for smaller diagrams and larger screens to improve performance */}
               {!isLargeDiagram && (
                 <MiniMap
                   position="bottom-right"
-                  className="bg-white border border-gray-200 rounded-md"
+                  className="bg-white border border-gray-200 rounded-md hidden sm:block"
                   maskColor="rgba(0, 0, 0, 0.1)"
                   nodeColor={(node) => {
                     const visualNode = node.data?.visualNode as VisualNode;

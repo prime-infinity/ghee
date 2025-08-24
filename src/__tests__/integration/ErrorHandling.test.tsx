@@ -57,7 +57,9 @@ describe("Error Handling Integration", () => {
     );
 
     // Enter invalid code
-    const codeInput = screen.getByPlaceholderText(/paste your code here/i);
+    const codeInput = screen.getByPlaceholderText(
+      /paste your javascript or typescript code here/i
+    );
     fireEvent.change(codeInput, { target: { value: "invalid syntax {" } });
 
     // Submit code
@@ -115,7 +117,9 @@ describe("Error Handling Integration", () => {
     );
 
     // Enter code that triggers fallback
-    const codeInput = screen.getByPlaceholderText(/paste your code here/i);
+    const codeInput = screen.getByPlaceholderText(
+      /paste your javascript or typescript code here/i
+    );
     fireEvent.change(codeInput, {
       target: { value: 'function test() { console.log("test"); }' },
     });
@@ -172,7 +176,9 @@ describe("Error Handling Integration", () => {
       </AppProvider>
     );
 
-    const codeInput = screen.getByPlaceholderText(/paste your code here/i);
+    const codeInput = screen.getByPlaceholderText(
+      /paste your javascript or typescript code here/i
+    );
     fireEvent.change(codeInput, { target: { value: "const x = 1;" } });
 
     const submitButton = screen.getByText(/visualize code/i);
@@ -222,7 +228,9 @@ describe("Error Handling Integration", () => {
       </AppProvider>
     );
 
-    const codeInput = screen.getByPlaceholderText(/paste your code here/i);
+    const codeInput = screen.getByPlaceholderText(
+      /paste your javascript or typescript code here/i
+    );
     fireEvent.change(codeInput, {
       target: { value: "const largeArray = new Array(1000000);" },
     });
@@ -282,7 +290,9 @@ describe("Error Handling Integration", () => {
       </AppProvider>
     );
 
-    const codeInput = screen.getByPlaceholderText(/paste your code here/i);
+    const codeInput = screen.getByPlaceholderText(
+      /paste your javascript or typescript code here/i
+    );
     fireEvent.change(codeInput, { target: { value: "const x = 1;" } });
 
     const submitButton = screen.getByText(/visualize code/i);
@@ -318,7 +328,7 @@ describe("Error Handling Integration", () => {
       });
     });
 
-    mockVisualizationService.cancelProcessing = jest.fn();
+    mockVisualizationService.cancelProcessing = vi.fn();
 
     render(
       <AppProvider>
@@ -326,7 +336,9 @@ describe("Error Handling Integration", () => {
       </AppProvider>
     );
 
-    const codeInput = screen.getByPlaceholderText(/paste your code here/i);
+    const codeInput = screen.getByPlaceholderText(
+      /paste your javascript or typescript code here/i
+    );
     fireEvent.change(codeInput, { target: { value: "const x = 1;" } });
 
     const submitButton = screen.getByText(/visualize code/i);
@@ -368,7 +380,9 @@ describe("Error Handling Integration", () => {
       </AppProvider>
     );
 
-    const codeInput = screen.getByPlaceholderText(/paste your code here/i);
+    const codeInput = screen.getByPlaceholderText(
+      /paste your javascript or typescript code here/i
+    );
     fireEvent.change(codeInput, { target: { value: "invalid code" } });
 
     const submitButton = screen.getByText(/visualize code/i);

@@ -23,7 +23,7 @@ describe("CodeInputComponent", () => {
 
       expect(screen.getByText("Code Visualizer")).toBeInTheDocument();
       expect(
-        screen.getByPlaceholderText(/Paste your code here/)
+        screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/)
       ).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /Visualize Code/ })
@@ -57,7 +57,7 @@ describe("CodeInputComponent", () => {
       const user = userEvent.setup();
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       await user.type(textarea, "const x = 1;");
 
       expect(textarea).toHaveValue("const x = 1;");
@@ -68,7 +68,7 @@ describe("CodeInputComponent", () => {
       const user = userEvent.setup();
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       const button = screen.getByRole("button", { name: /Visualize Code/ });
 
       await user.type(textarea, "const x = 1;");
@@ -81,7 +81,7 @@ describe("CodeInputComponent", () => {
       const user = userEvent.setup();
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
 
       await user.type(textarea, "const x = 1;");
       await user.keyboard("{Control>}{Enter}{/Control}");
@@ -103,7 +103,7 @@ describe("CodeInputComponent", () => {
       const user = userEvent.setup();
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       const button = screen.getByRole("button", { name: /Visualize Code/ });
 
       await user.type(textarea, "   \n\t  ");
@@ -125,7 +125,7 @@ describe("CodeInputComponent", () => {
     it("disables textarea when processing", () => {
       render(<CodeInputComponent {...defaultProps} isProcessing={true} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       expect(textarea).toBeDisabled();
     });
 
@@ -173,7 +173,7 @@ describe("CodeInputComponent", () => {
       const user = userEvent.setup();
       render(<CodeInputComponent {...defaultProps} isValid={true} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       await user.type(textarea, "const x = 1;");
 
       expect(screen.getByText("Code looks good!")).toBeInTheDocument();
@@ -199,7 +199,7 @@ describe("CodeInputComponent", () => {
         />
       );
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       await user.type(textarea, "const x = 1");
 
       expect(screen.getByText("Syntax Error")).toBeInTheDocument();
@@ -213,7 +213,7 @@ describe("CodeInputComponent", () => {
       const user = userEvent.setup();
       render(<CodeInputComponent {...defaultProps} isValid={true} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       await user.type(textarea, "const x = 1;");
 
       expect(textarea).toHaveClass("border-green-300", "bg-green-50");
@@ -239,7 +239,7 @@ describe("CodeInputComponent", () => {
         />
       );
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       await user.type(textarea, "const x = 1");
 
       expect(textarea).toHaveClass("border-red-300", "bg-red-50");
@@ -273,7 +273,7 @@ describe("CodeInputComponent", () => {
       const user = userEvent.setup();
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       const button = screen.getByRole("button", { name: /Visualize Code/ });
 
       expect(button).toBeDisabled();
@@ -287,7 +287,7 @@ describe("CodeInputComponent", () => {
       const user = userEvent.setup();
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       await user.type(textarea, "const x = 1;");
 
       // Re-render with processing state
@@ -301,7 +301,7 @@ describe("CodeInputComponent", () => {
       const user = userEvent.setup();
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       const button = screen.getByRole("button", { name: /Visualize Code/ });
 
       await user.type(textarea, "const x = 1;");
@@ -330,7 +330,7 @@ describe("CodeInputComponent", () => {
     it("has proper ARIA labels and roles", () => {
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       const button = screen.getByRole("button", { name: /Visualize Code/ });
 
       expect(textarea).toBeInTheDocument();
@@ -341,7 +341,7 @@ describe("CodeInputComponent", () => {
       const user = userEvent.setup();
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
 
       // Tab to textarea
       await user.tab();
@@ -359,7 +359,7 @@ describe("CodeInputComponent", () => {
     it("handles focus management during processing", () => {
       render(<CodeInputComponent {...defaultProps} isProcessing={true} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       expect(textarea).toBeDisabled();
     });
   });
@@ -370,7 +370,7 @@ describe("CodeInputComponent", () => {
 
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
 
       // Use fireEvent for large text input to avoid timeout
       fireEvent.change(textarea, { target: { value: longCode } });
@@ -386,7 +386,7 @@ describe("CodeInputComponent", () => {
 
       render(<CodeInputComponent {...defaultProps} />);
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
 
       // Use fireEvent for special characters to avoid userEvent issues
       fireEvent.change(textarea, { target: { value: specialCode } });
@@ -421,7 +421,7 @@ describe("CodeInputComponent", () => {
         />
       );
 
-      const textarea = screen.getByPlaceholderText(/Paste your code here/);
+      const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
       await user.type(textarea, "x = 1");
 
       expect(screen.getByText("Syntax Error")).toBeInTheDocument();

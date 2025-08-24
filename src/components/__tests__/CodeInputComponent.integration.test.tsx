@@ -19,7 +19,7 @@ describe("CodeInputComponent Integration", () => {
     );
 
     // User types code
-    const textarea = screen.getByPlaceholderText(/Paste your code here/);
+    const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
     await user.type(textarea, "const x = 1;");
 
     // Verify code is entered and validation shows success
@@ -83,7 +83,7 @@ describe("CodeInputComponent Integration", () => {
     );
 
     // User types invalid code
-    const textarea = screen.getByPlaceholderText(/Paste your code here/);
+    const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
     await user.type(textarea, "const x = 1");
 
     // Verify error display
@@ -119,7 +119,7 @@ describe("CodeInputComponent Integration", () => {
       />
     );
 
-    const textarea = screen.getByPlaceholderText(/Paste your code here/);
+    const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
 
     // Focus textarea and type code using fireEvent to avoid userEvent issues
     await user.click(textarea);
@@ -151,7 +151,7 @@ describe("CodeInputComponent Integration", () => {
       .closest("div")?.parentElement;
     expect(container).toHaveClass("max-w-4xl", "mx-auto");
 
-    const textarea = screen.getByPlaceholderText(/Paste your code here/);
+    const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
     expect(textarea).toHaveClass("w-full", "resize-y");
   });
 
@@ -168,7 +168,7 @@ describe("CodeInputComponent Integration", () => {
 
     // Test keyboard navigation
     await user.tab();
-    const textarea = screen.getByPlaceholderText(/Paste your code here/);
+    const textarea = screen.getByPlaceholderText(/Paste your JavaScript or TypeScript code here/);
     expect(textarea).toHaveFocus();
 
     // Add some text to enable the button

@@ -6,6 +6,7 @@ import { CodeInputComponent } from "./components/CodeInputComponent";
 import { InteractiveDiagramComponent } from "./components/InteractiveDiagramComponent";
 import { ProgressiveLoadingIndicator } from "./components/ProgressiveLoadingIndicator";
 import { ErrorList } from "./components/ErrorDisplay";
+import { ExamplesAndGuide } from "./components/ExamplesAndGuide";
 import { AccessibilityProvider } from "./components/accessibility/AccessibilityProvider";
 import {
   CodeVisualizationService,
@@ -161,13 +162,13 @@ const AppContent: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 md:py-8">
         {/* Header */}
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+        <header className="text-center mb-8 md:mb-12 animate-fade-in">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4">
             Ghee Code Visualizer
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Transform your JavaScript and TypeScript code into interactive
             visual diagrams. Understand patterns, flows, and relationships in
             your code at a glance.
@@ -175,9 +176,9 @@ const AppContent: React.FC = () => {
         </header>
 
         {/* Main Content */}
-        <div className="space-y-8">
+        <div className="space-y-6 md:space-y-8">
           {/* Code Input Section */}
-          <section>
+          <section className="animate-slide-in-left">
             <CodeInputComponent
               onCodeSubmit={handleCodeSubmit}
               isProcessing={state.isProcessing}
@@ -188,9 +189,19 @@ const AppContent: React.FC = () => {
             />
           </section>
 
+          {/* Examples and Guide Section - Show when no diagram is displayed */}
+          {!state.diagramData && !state.isProcessing && (
+            <section className="animate-slide-in-right">
+              <ExamplesAndGuide
+                onExampleSelect={handleCodeSubmit}
+                className="max-w-4xl mx-auto"
+              />
+            </section>
+          )}
+
           {/* Progressive Loading Indicator */}
           {state.isProcessing && state.processingStage && (
-            <section className="max-w-4xl mx-auto">
+            <section className="max-w-4xl mx-auto animate-fade-in">
               <ProgressiveLoadingIndicator
                 currentStage={state.processingStage}
                 progress={processingProgress}
@@ -213,7 +224,7 @@ const AppContent: React.FC = () => {
 
           {/* Error Display */}
           {(state.applicationError || state.validationErrors.length > 0) && (
-            <section className="max-w-4xl mx-auto">
+            <section className="max-w-4xl mx-auto animate-fade-in">
               {state.applicationError && (
                 <ErrorList
                   errors={[state.applicationError]}
@@ -241,51 +252,27 @@ const AppContent: React.FC = () => {
 
           {/* Visualization Section */}
           {state.diagramData && (
-            <section className="max-w-6xl mx-auto">
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                  Code Visualization
-                </h2>
+            <section className="max-w-6xl mx-auto animate-fade-in">
+              <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 hover-lift transition-smooth">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-6">
+                  <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2 sm:mb-0">
+                    Code Visualization
+                  </h2>
+                  <div className="text-sm text-gray-500">
+                    {state.diagramData.nodes.length} nodes,{" "}
+                    {state.diagramData.edges.length} connections
+                  </div>
+                </div>
                 <InteractiveDiagramComponent
                   diagramData={state.diagramData}
                   onNodeClick={handleNodeClick}
                   onEdgeClick={handleEdgeClick}
                   isLoading={state.isProcessing}
-                  className="h-96"
+                  className="h-80 md:h-96 lg:h-[500px]"
                 />
               </div>
             </section>
           )}
-
-          {/* Empty State */}
-          {!state.diagramData &&
-            !state.isProcessing &&
-            !state.applicationError && (
-              <section className="max-w-4xl mx-auto text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <svg
-                    className="w-16 h-16 mx-auto"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">
-                  Ready to visualize your code
-                </h3>
-                <p className="text-gray-600">
-                  Paste your JavaScript or TypeScript code above to see it
-                  transformed into an interactive diagram.
-                </p>
-              </section>
-            )}
         </div>
       </div>
     </Layout>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Clock, Zap, Brain, Eye, AlertTriangle } from "lucide-react";
+import { Clock, Zap, Brain, Eye, AlertTriangle, X } from "lucide-react";
+import { LoadingSpinner, PulsingDots } from "./LoadingSpinner";
 import type { CodeComplexityMetrics } from "../services/PerformanceService";
 
 /**
@@ -124,15 +125,19 @@ export const ProgressiveLoadingIndicator: React.FC<
 
   return (
     <div
-      className={`bg-white border border-blue-200 rounded-lg p-6 shadow-sm ${className}`}
+      className={`bg-white border border-blue-200 rounded-lg p-4 md:p-6 shadow-sm hover-lift transition-smooth animate-fade-in ${className}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
           {stageInfo && (
             <div className="flex items-center gap-2 text-blue-600">
-              <div className="animate-pulse">{stageInfo.icon}</div>
-              <span className="font-medium">{stageInfo.message}</span>
+              <div className="animate-pulse-soft">
+                <LoadingSpinner size="sm" color="blue" />
+              </div>
+              <span className="font-medium text-sm md:text-base">
+                {stageInfo.message}
+              </span>
             </div>
           )}
         </div>
@@ -140,38 +145,47 @@ export const ProgressiveLoadingIndicator: React.FC<
         {canCancel && onCancel && (
           <button
             onClick={onCancel}
-            className="px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+            className="flex items-center gap-1 px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors-smooth hover-lift self-start sm:self-auto"
           >
-            Cancel
+            <X className="w-4 h-4" />
+            <span className="hidden sm:inline">Cancel</span>
           </button>
         )}
       </div>
 
       {/* Stage description */}
       {stageInfo && (
-        <p className="text-sm text-gray-600 mb-4">{stageInfo.description}</p>
+        <p className="text-xs md:text-sm text-gray-600 mb-4 animate-slide-in-left">
+          {stageInfo.description}
+        </p>
       )}
 
       {/* Progress bar with stages */}
       <div className="mb-4">
-        <div className="flex justify-between text-xs text-gray-500 mb-2">
+        <div className="flex justify-between text-xs text-gray-500 mb-2 overflow-x-auto">
           {stages.map((stage, index) => (
             <span
               key={stage}
-              className={`capitalize ${
+              className={`capitalize whitespace-nowrap transition-colors-smooth ${
                 currentStage === stage ? "text-blue-600 font-medium" : ""
               }`}
             >
-              {stage.replace("-", " ")}
+              <span className="hidden sm:inline">
+                {stage.replace("-", " ")}
+              </span>
+              <span className="sm:hidden">{stage.split("-")[0]}</span>
             </span>
           ))}
         </div>
 
         <div className="flex gap-1">
           {stageProgress.map((progress, index) => (
-            <div key={index} className="flex-1 bg-gray-200 rounded-full h-2">
+            <div
+              key={index}
+              className="flex-1 bg-gray-200 rounded-full h-2 md:h-3"
+            >
               <div
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-500 ease-out animate-shimmer"
                 style={{ width: `${progress}%` }}
               />
             </div>
