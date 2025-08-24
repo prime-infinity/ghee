@@ -4,6 +4,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Layout } from "./components/Layout";
 import { CodeInputComponent } from "./components/CodeInputComponent";
 import { InteractiveDiagramComponent } from "./components/InteractiveDiagramComponent";
+import { ErrorList, WarningDisplay } from "./components/ErrorDisplay";
 import {
   CodeVisualizationService,
   type ProcessingStage,
@@ -38,6 +39,12 @@ const AppContent: React.FC = () => {
         if (result.success && result.diagramData) {
           dispatch({ type: "SET_DIAGRAM_DATA", payload: result.diagramData });
           dispatch({ type: "PROCESSING_COMPLETE" });
+
+          // Show warnings if fallback was used
+          if (result.fallbackUsed && result.warnings) {
+            // Store warnings in state for display
+            console.warn("Fallback visualization used:", result.warnings);
+          }
         } else {
           dispatch({ type: "SET_VALIDATION_ERRORS", payload: result.errors });
           dispatch({ type: "PROCESSING_COMPLETE" });
@@ -72,6 +79,22 @@ const AppContent: React.FC = () => {
     visualizationService.cancelProcessing();
     dispatch({ type: "CANCEL_PROCESSING" });
   }, [visualizationService, dispatch]);
+
+  /**
+   * Handle error retry
+   */
+  const handleErrorRetry = useCallback(() => {
+    if (state.code) {
+      handleCodeSubmit(state.code);
+    }
+  }, [state.code, handleCodeSubmit]);
+
+  /**
+   * Handle error dismissal
+   */
+  const handleErrorDismiss = useCallback(() => {
+    dispatch({ type: "CLEAR_ERRORS" });
+  }, [dispatch]);
 
   /**
    * Handle node clicks in the diagram
@@ -153,60 +176,31 @@ const AppContent: React.FC = () => {
             </section>
           )}
 
-          {/* Application Error Display */}
-          {state.applicationError && (
+          {/* Error Display */}
+          {(state.applicationError || state.validationErrors.length > 0) && (
             <section className="max-w-4xl mx-auto">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 text-red-600 mt-0.5">
-                    <svg fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-red-800 mb-1">
-                      {state.applicationError.message}
-                    </h3>
-                    <p className="text-red-700 text-sm mb-3">
-                      {state.applicationError.description}
-                    </p>
-                    {state.applicationError.suggestions.length > 0 && (
-                      <div className="text-sm">
-                        <p className="font-medium text-red-800 mb-1">
-                          Suggestions:
-                        </p>
-                        <ul className="list-disc list-inside text-red-700 space-y-1">
-                          {state.applicationError.suggestions.map(
-                            (suggestion, index) => (
-                              <li key={index}>{suggestion}</li>
-                            )
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => dispatch({ type: "CLEAR_ERRORS" })}
-                    className="flex-shrink-0 text-red-600 hover:text-red-800"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+              {state.applicationError && (
+                <ErrorList
+                  errors={[state.applicationError]}
+                  showDetails={process.env.NODE_ENV === "development"}
+                  onRetry={handleErrorRetry}
+                  onDismiss={handleErrorDismiss}
+                  showRetry={true}
+                  showDismiss={true}
+                  className="mb-4"
+                />
+              )}
+
+              {state.validationErrors.length > 0 && (
+                <ErrorList
+                  errors={state.validationErrors}
+                  showDetails={process.env.NODE_ENV === "development"}
+                  onRetry={handleErrorRetry}
+                  onDismiss={handleErrorDismiss}
+                  showRetry={true}
+                  showDismiss={true}
+                />
+              )}
             </section>
           )}
 
