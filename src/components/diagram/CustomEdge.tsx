@@ -138,7 +138,7 @@ export const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
               {visualEdge.label}
               {/* Hidden description for screen readers */}
               <div id={`edge-${visualEdge.id}-description`} className="sr-only">
-                {edgeExplanation.detailed || edgeExplanation.simple}
+                {edgeExplanation.whatItDoes || edgeExplanation.simple}
                 Connection type: {visualEdge.type.replace("-", " ")}
               </div>
             </button>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Clock, Zap, Brain, Eye, AlertTriangle, X } from "lucide-react";
-import { LoadingSpinner, PulsingDots } from "./LoadingSpinner";
+import { LoadingSpinner } from "./LoadingSpinner";
 import type { CodeComplexityMetrics } from "../services/PerformanceService";
 
 /**
@@ -114,7 +114,7 @@ export const ProgressiveLoadingIndicator: React.FC<
   const stages = Object.keys(
     STAGE_DEFINITIONS
   ) as ProcessingStageInfo["stage"][];
-  const stageProgress = stages.map((stage, index) => {
+  const stageProgress = stages.map((_stage, index) => {
     if (!currentStage) return 0;
 
     const currentIndex = stages.indexOf(currentStage);
@@ -163,7 +163,7 @@ export const ProgressiveLoadingIndicator: React.FC<
       {/* Progress bar with stages */}
       <div className="mb-4">
         <div className="flex justify-between text-xs text-gray-500 mb-2 overflow-x-auto">
-          {stages.map((stage, index) => (
+          {stages.map((stage) => (
             <span
               key={stage}
               className={`capitalize whitespace-nowrap transition-colors-smooth ${

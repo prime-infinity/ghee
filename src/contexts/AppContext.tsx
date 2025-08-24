@@ -17,7 +17,12 @@ export interface AppState {
   /** Whether the current code is valid */
   isValid: boolean;
   /** Processing stage for user feedback */
-  processingStage: "parsing" | "pattern-recognition" | "visualization" | null;
+  processingStage:
+    | "parsing"
+    | "pattern-recognition"
+    | "visualization"
+    | "optimization"
+    | null;
   /** General application errors */
   applicationError: UserFriendlyError | null;
 }

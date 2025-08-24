@@ -1,4 +1,4 @@
-import { vi, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ErrorHandlerService } from '../../services/ErrorHandlerService';
 import type { ParseError, PatternError, VisualizationError, ErrorContext } from '../../types/errors';
 

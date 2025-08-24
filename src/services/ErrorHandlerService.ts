@@ -10,6 +10,7 @@ import type {
 } from '../types/errors';
 import type { DiagramData, VisualNode, VisualEdge } from '../types/visualization';
 import type { RecognizedPattern } from '../types/patterns';
+import { AlertTriangle, Code, Database, User } from 'lucide-react';
 
 /**
  * Comprehensive error handling service for the code visualization application
@@ -245,11 +246,13 @@ export class ErrorHandlerService implements ErrorHandler {
           id: 'error-node',
           type: 'error',
           position: { x: 100, y: 100 },
-          data: {
-            label: `${error.patternType} Pattern`,
-            icon: 'AlertTriangle',
-            explanation: `Could not fully analyze ${error.patternType} pattern`,
-            properties: {
+          icon: AlertTriangle,
+          label: `${error.patternType} Pattern`,
+          explanation: `Could not fully analyze ${error.patternType} pattern`,
+          metadata: {
+            patternNodeId: 'error-pattern',
+            patternType: error.patternType,
+            context: {
               error: true,
               patternType: error.patternType
             }
@@ -264,7 +267,15 @@ export class ErrorHandlerService implements ErrorHandler {
         edges,
         layout: {
           direction: 'horizontal',
-          spacing: { x: 150, y: 100 }
+          nodeSpacing: 150,
+          levelSpacing: 100,
+          autoFit: true,
+          padding: {
+            top: 20,
+            right: 20,
+            bottom: 20,
+            left: 20
+          }
         }
       };
     } catch (fallbackError) {
@@ -290,11 +301,13 @@ export class ErrorHandlerService implements ErrorHandler {
         id: `simplified-${pattern.id || index}`,
         type: this.getSimplifiedNodeType(pattern.type),
         position: { x: index * 200 + 100, y: 100 },
-        data: {
-          label: this.getSimplifiedLabel(pattern.type),
-          icon: this.getSimplifiedIcon(pattern.type),
-          explanation: `Simplified ${pattern.type} pattern`,
-          properties: {
+        icon: this.getSimplifiedIconComponent(pattern.type),
+        label: this.getSimplifiedLabel(pattern.type),
+        explanation: `Simplified ${pattern.type} pattern`,
+        metadata: {
+          patternNodeId: pattern.id || `pattern-${index}`,
+          patternType: pattern.type,
+          context: {
             simplified: true,
             originalType: pattern.type
           }
@@ -308,11 +321,10 @@ export class ErrorHandlerService implements ErrorHandler {
           id: `simplified-edge-${i}`,
           source: nodes[i].id,
           target: nodes[i + 1].id,
-          type: 'default',
-          data: {
-            label: 'flows to',
-            animated: false
-          }
+          label: 'flows to',
+          type: 'data-flow',
+          color: '#6b7280',
+          animated: false
         });
       }
 
@@ -321,7 +333,15 @@ export class ErrorHandlerService implements ErrorHandler {
         edges,
         layout: {
           direction: 'horizontal',
-          spacing: { x: 200, y: 100 }
+          nodeSpacing: 200,
+          levelSpacing: 100,
+          autoFit: true,
+          padding: {
+            top: 20,
+            right: 20,
+            bottom: 20,
+            left: 20
+          }
         }
       };
     } catch (simplificationError) {
@@ -340,11 +360,13 @@ export class ErrorHandlerService implements ErrorHandler {
           id: 'minimal-node',
           type: 'component',
           position: { x: 100, y: 100 },
-          data: {
-            label: 'Code Structure',
-            icon: 'Code',
-            explanation: 'Basic code visualization',
-            properties: {
+          icon: Code,
+          label: 'Code Structure',
+          explanation: 'Basic code visualization',
+          metadata: {
+            patternNodeId: 'minimal-pattern',
+            patternType: 'basic',
+            context: {
               minimal: true
             }
           }
@@ -353,7 +375,15 @@ export class ErrorHandlerService implements ErrorHandler {
       edges: [],
       layout: {
         direction: 'horizontal',
-        spacing: { x: 150, y: 100 }
+        nodeSpacing: 150,
+        levelSpacing: 100,
+        autoFit: true,
+        padding: {
+          top: 20,
+          right: 20,
+          bottom: 20,
+          left: 20
+        }
       }
     };
   }
@@ -416,11 +446,13 @@ export class ErrorHandlerService implements ErrorHandler {
       id: `basic-${index}`,
       type: element.type === 'function' ? 'function' : 'variable',
       position: { x: index * 150 + 100, y: 100 },
-      data: {
-        label: element.name,
-        icon: element.type === 'function' ? 'Zap' : 'Box',
-        explanation: `${element.type}: ${element.name}`,
-        properties: {
+      icon: element.type === 'function' ? Code : Database,
+      label: element.name,
+      explanation: `${element.type}: ${element.name}`,
+      metadata: {
+        patternNodeId: `basic-${element.type}-${index}`,
+        patternType: element.type,
+        context: {
           basic: true,
           elementType: element.type
         }
@@ -433,11 +465,10 @@ export class ErrorHandlerService implements ErrorHandler {
         id: `basic-edge-${i}`,
         source: nodes[i].id,
         target: nodes[i + 1].id,
-        type: 'default',
-        data: {
-          label: 'relates to',
-          animated: false
-        }
+        label: 'relates to',
+        type: 'data-flow',
+        color: '#6b7280',
+        animated: false
       });
     }
 
@@ -446,7 +477,15 @@ export class ErrorHandlerService implements ErrorHandler {
       edges,
       layout: {
         direction: 'horizontal',
-        spacing: { x: 150, y: 100 }
+        nodeSpacing: 150,
+        levelSpacing: 100,
+        autoFit: true,
+        padding: {
+          top: 20,
+          right: 20,
+          bottom: 20,
+          left: 20
+        }
       }
     };
   }
@@ -505,9 +544,69 @@ export class ErrorHandlerService implements ErrorHandler {
   }
 
   /**
+   * Get simplified icon component for pattern type
+   */
+  private getSimplifiedIconComponent(patternType: string) {
+    switch (patternType) {
+      case 'counter':
+      case 'function':
+        return Code;
+      case 'database':
+      case 'api':
+        return Database;
+      case 'user':
+        return User;
+      default:
+        return AlertTriangle;
+    }
+  }
+
+
+
+  /**
+   * Get simplified label for pattern type
+   */
+  private getSimplifiedLabel(patternType: string): string {
+    switch (patternType) {
+      case 'counter':
+        return 'Counter';
+      case 'function':
+        return 'Function';
+      case 'database':
+        return 'Database';
+      case 'api':
+        return 'API Call';
+      case 'user':
+        return 'User Action';
+      default:
+        return 'Code Element';
+    }
+  }
+
+  /**
+   * Get simplified node type for pattern type
+   */
+  private getSimplifiedNodeType(patternType: string): VisualNode['type'] {
+    switch (patternType) {
+      case 'counter':
+        return 'counter';
+      case 'function':
+        return 'function';
+      case 'database':
+        return 'database';
+      case 'api':
+        return 'api';
+      case 'user':
+        return 'user';
+      default:
+        return 'component';
+    }
+  }
+
+  /**
    * Get application error suggestions
    */
-  private getApplicationErrorSuggestions(error: Error, context: ErrorContext): string[] {
+  private getApplicationErrorSuggestions(error: Error, _context: ErrorContext): string[] {
     const suggestions: string[] = [];
     
     if (error.message.includes('timeout')) {
@@ -533,7 +632,7 @@ export class ErrorHandlerService implements ErrorHandler {
   /**
    * Get application error severity
    */
-  private getApplicationErrorSeverity(error: Error, context: ErrorContext): UserFriendlyError['severity'] {
+  private getApplicationErrorSeverity(error: Error, _context: ErrorContext): UserFriendlyError['severity'] {
     if (error.message.includes('memory') || error.message.includes('crash')) {
       return 'critical';
     }
@@ -576,63 +675,5 @@ export class ErrorHandlerService implements ErrorHandler {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  /**
-   * Get simplified node type for error recovery
-   */
-  private getSimplifiedNodeType(patternType: string): VisualNode['type'] {
-    switch (patternType) {
-      case 'api-call':
-        return 'api';
-      case 'counter':
-        return 'button';
-      case 'database':
-        return 'database';
-      case 'error-handling':
-        return 'error';
-      case 'react-component':
-        return 'component';
-      default:
-        return 'component';
-    }
-  }
 
-  /**
-   * Get simplified label for error recovery
-   */
-  private getSimplifiedLabel(patternType: string): string {
-    switch (patternType) {
-      case 'api-call':
-        return 'API Call';
-      case 'counter':
-        return 'Counter';
-      case 'database':
-        return 'Database';
-      case 'error-handling':
-        return 'Error Handler';
-      case 'react-component':
-        return 'Component';
-      default:
-        return 'Code Element';
-    }
-  }
-
-  /**
-   * Get simplified icon for error recovery
-   */
-  private getSimplifiedIcon(patternType: string): string {
-    switch (patternType) {
-      case 'api-call':
-        return 'Globe';
-      case 'counter':
-        return 'Plus';
-      case 'database':
-        return 'Database';
-      case 'error-handling':
-        return 'AlertTriangle';
-      case 'react-component':
-        return 'Component';
-      default:
-        return 'Box';
-    }
-  }
 }

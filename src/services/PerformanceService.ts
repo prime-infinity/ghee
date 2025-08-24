@@ -258,7 +258,7 @@ export class PerformanceService {
     // Limit number of nodes for performance
     if (diagramData.nodes.length > this.config.maxDiagramNodes) {
       const importantNodes = diagramData.nodes
-        .sort((a, b) => (b.metadata?.confidence || 0) - (a.metadata?.confidence || 0))
+        .sort((a, b) => (b.metadata?.context?.confidence || 0) - (a.metadata?.context?.confidence || 0))
         .slice(0, this.config.maxDiagramNodes);
       
       // Keep edges that connect to remaining nodes

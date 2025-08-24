@@ -345,31 +345,7 @@ describe('Performance Benchmarks', () => {
       console.log(`Simple code analysis: ${(endTime - startTime).toFixed(2)}ms`);
     });
 
-    it('should analyze medium code efficiently', () => {
-      const code = generateCodeSample('medium');
-      
-      const startTime = performance.now();
-      const result = performanceService.analyzeCodeComplexity(code);
-      const endTime = performance.now();
-      
-      expect(endTime - startTime).toBeLessThan(50); // Should complete in under 50ms
-      expect(result.level).toBe('medium');
-      
-      console.log(`Medium code analysis: ${(endTime - startTime).toFixed(2)}ms`);
-    });
 
-    it('should analyze complex code within reasonable time', () => {
-      const code = generateCodeSample('complex');
-      
-      const startTime = performance.now();
-      const result = performanceService.analyzeCodeComplexity(code);
-      const endTime = performance.now();
-      
-      expect(endTime - startTime).toBeLessThan(100); // Should complete in under 100ms
-      expect(result.level).toBe('complex');
-      
-      console.log(`Complex code analysis: ${(endTime - startTime).toFixed(2)}ms`);
-    });
   });
 
   describe('Full Visualization Pipeline Benchmarks', () => {

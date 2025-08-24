@@ -76,7 +76,7 @@ export const InteractiveDiagramComponent: React.FC<InteractiveDiagramProps> =
       const [reactFlowInstance, setReactFlowInstance] =
         useState<ReactFlowInstance | null>(null);
       const [isLargeDiagram, setIsLargeDiagram] = useState(false);
-      const [focusedNodeIndex, setFocusedNodeIndex] = useState(0);
+      // const [focusedNodeIndex, setFocusedNodeIndex] = useState(0);
       const diagramRef = useRef<HTMLDivElement>(null);
       const rovingTabindexRef = useRef<RovingTabindexManager | null>(null);
 

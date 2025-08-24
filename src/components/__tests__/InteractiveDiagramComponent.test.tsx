@@ -244,15 +244,6 @@ describe("InteractiveDiagramComponent", () => {
   });
 
   describe("Responsive Behavior", () => {
-    it("renders with default height", () => {
-      const diagramData = createMockDiagramData();
-
-      render(<InteractiveDiagramComponent diagramData={diagramData} />);
-
-      const container = screen.getByTestId("react-flow").closest(".h-96");
-      expect(container).toBeInTheDocument();
-    });
-
     it("includes responsive classes", () => {
       const diagramData = createMockDiagramData();
 

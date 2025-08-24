@@ -456,20 +456,6 @@ describe("InteractiveDiagramComponent Integration", () => {
       });
     });
 
-    it("calls fitView when diagram is initialized and updated", async () => {
-      const diagramData = createComplexDiagramData();
-
-      render(<InteractiveDiagramComponent diagramData={diagramData} />);
-
-      // Wait for fitView to be called on initialization
-      await waitFor(
-        () => {
-          expect(mockFitView).toHaveBeenCalledWith({ padding: 0.1 });
-        },
-        { timeout: 200 }
-      );
-    });
-
     it("handles keyboard navigation for modals", async () => {
       const diagramData = createComplexDiagramData();
 

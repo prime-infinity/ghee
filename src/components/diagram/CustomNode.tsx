@@ -116,7 +116,7 @@ export const CustomNode: React.FC<NodeProps<CustomNodeData>> = ({
 
         {/* Hidden description for screen readers */}
         <div id={`node-${visualNode.id}-description`} className="sr-only">
-          {nodeExplanation.detailed || nodeExplanation.simple}
+          {nodeExplanation.whatItDoes || nodeExplanation.simple}
           {visualNode.metadata.patternType &&
             ` This is part of a ${visualNode.metadata.patternType.replace(
               "-",
