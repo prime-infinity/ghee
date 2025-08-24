@@ -119,7 +119,9 @@ export class ErrorBoundary extends Component<
       }
 
       // Default error UI
-      const suggestions = this.getErrorSuggestions(this.state.error);
+      const suggestions = this.state.error
+        ? this.getErrorSuggestions(this.state.error)
+        : [];
       const showRetry = this.state.retryCount < 3; // Limit retry attempts
 
       return (

@@ -30,6 +30,10 @@ export interface ErrorContext {
   operation: string;
   /** Input data that caused the error */
   input?: any;
+  /** Line number where error occurred (for parse errors) */
+  line?: number;
+  /** Column number where error occurred (for parse errors) */
+  column?: number;
   /** Additional context properties */
   metadata?: Record<string, any>;
 }

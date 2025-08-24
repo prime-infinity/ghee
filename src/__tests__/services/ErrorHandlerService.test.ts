@@ -1,7 +1,6 @@
-import { vi } from 'vitest';
+import { vi, beforeEach } from 'vitest';
 import { ErrorHandlerService } from '../../services/ErrorHandlerService';
 import type { ParseError, PatternError, VisualizationError, ErrorContext } from '../../types/errors';
-import { beforeEach } from 'node:test';
 
 describe('ErrorHandlerService', () => {
   let errorHandler: ErrorHandlerService;

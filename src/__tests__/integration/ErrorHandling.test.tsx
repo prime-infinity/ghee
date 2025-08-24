@@ -1,4 +1,5 @@
 import React from "react";
+import { vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AppProvider } from "../../contexts/AppContext";
 import { CodeVisualizationService } from "../../services/CodeVisualizationService";
@@ -6,27 +7,27 @@ import { ErrorHandlerService } from "../../services/ErrorHandlerService";
 import App from "../../App";
 
 // Mock the services
-jest.mock("../../services/CodeVisualizationService");
-jest.mock("../../services/ErrorHandlerService");
+vi.mock("../../services/CodeVisualizationService");
+vi.mock("../../services/ErrorHandlerService");
 
 const MockedCodeVisualizationService =
-  CodeVisualizationService as jest.MockedClass<typeof CodeVisualizationService>;
-const MockedErrorHandlerService = ErrorHandlerService as jest.MockedClass<
+  CodeVisualizationService as vi.MockedClass<typeof CodeVisualizationService>;
+const MockedErrorHandlerService = ErrorHandlerService as vi.MockedClass<
   typeof ErrorHandlerService
 >;
 
 describe("Error Handling Integration", () => {
-  let mockVisualizationService: jest.Mocked<CodeVisualizationService>;
-  let mockErrorHandler: jest.Mocked<ErrorHandlerService>;
+  let mockVisualizationService: vi.Mocked<CodeVisualizationService>;
+  let mockErrorHandler: vi.Mocked<ErrorHandlerService>;
 
   beforeEach(() => {
     mockVisualizationService =
-      new MockedCodeVisualizationService() as jest.Mocked<CodeVisualizationService>;
+      new MockedCodeVisualizationService() as vi.Mocked<CodeVisualizationService>;
     mockErrorHandler =
-      new MockedErrorHandlerService() as jest.Mocked<ErrorHandlerService>;
+      new MockedErrorHandlerService() as vi.Mocked<ErrorHandlerService>;
 
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should handle syntax errors gracefully", async () => {

@@ -1,5 +1,6 @@
 import type { DiagramData } from '../types/visualization';
-import type { UserFriendlyError, PatternError, VisualizationError } from '../types/errors';
+import type { UserFriendlyError, VisualizationError } from '../types/errors';
+import type { RecognizedPattern } from '../types/patterns';
 import { ASTParserService } from './ASTParserService';
 import { PatternRecognitionEngine } from './PatternRecognitionEngine';
 import { VisualizationGenerator } from './VisualizationGenerator';
@@ -100,12 +101,12 @@ export class CodeVisualizationService {
       progressCallback?.('pattern-recognition', 33);
       if (this.shouldCancel) return this.getCancelledResult();
 
-      let patterns;
+      let patterns: RecognizedPattern[];
       try {
         patterns = await this.errorHandler.retryOperation(
-          () => this.patternEngine.recognizePatterns(parseResult.ast, code),
+          () => Promise.resolve(this.patternEngine.recognizePatterns(parseResult.ast, code)),
           { component: 'PatternRecognitionEngine', operation: 'recognizePatterns' }
-        );
+        ) as RecognizedPattern[];
       } catch (patternError) {
         // Try fallback visualization for pattern recognition failures
         const fallback = this.errorHandler.createFallbackVisualization(code, ['pattern-recognition']);
@@ -177,12 +178,12 @@ export class CodeVisualizationService {
       progressCallback?.('visualization', 66);
       if (this.shouldCancel) return this.getCancelledResult();
 
-      let diagramData;
+      let diagramData: DiagramData;
       try {
         diagramData = await this.errorHandler.retryOperation(
-          () => this.visualizationGenerator.generateDiagram(patterns),
+          () => Promise.resolve(this.visualizationGenerator.generateDiagram(patterns)),
           { component: 'VisualizationGenerator', operation: 'generateDiagram' }
-        );
+        ) as DiagramData;
       } catch (visualizationError) {
         // Try simplified diagram for visualization failures
         const vizError: VisualizationError = {
