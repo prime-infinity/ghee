@@ -129,8 +129,18 @@ export const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
                 }
               }}
               aria-label={`${visualEdge.label}: ${edgeExplanation.simple}`}
+              aria-describedby={`edge-${visualEdge.id}-description`}
+              role="button"
+              tabIndex={0}
+              data-id={`edge-${visualEdge.id}`}
+              className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               {visualEdge.label}
+              {/* Hidden description for screen readers */}
+              <div id={`edge-${visualEdge.id}-description`} className="sr-only">
+                {edgeExplanation.detailed || edgeExplanation.simple}
+                Connection type: {visualEdge.type.replace("-", " ")}
+              </div>
             </button>
           </Tooltip>
         </div>

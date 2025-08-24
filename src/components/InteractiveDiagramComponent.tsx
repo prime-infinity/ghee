@@ -1,4 +1,11 @@
-import React, { useCallback, useMemo, useState, memo } from "react";
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+  memo,
+  useRef,
+  useEffect,
+} from "react";
 import ReactFlow, {
   addEdge,
   useNodesState,
@@ -29,6 +36,10 @@ import { CustomNode } from "./diagram/CustomNode";
 import { CustomEdge } from "./diagram/CustomEdge";
 import { NodeDetailsModal } from "./diagram/NodeDetailsModal";
 import { EdgeDetailsModal } from "./diagram/EdgeDetailsModal";
+import {
+  RovingTabindexManager,
+  announceToScreenReader,
+} from "../utils/keyboardNavigation";
 
 /**
  * Props for the InteractiveDiagramComponent
@@ -65,6 +76,9 @@ export const InteractiveDiagramComponent: React.FC<InteractiveDiagramProps> =
       const [reactFlowInstance, setReactFlowInstance] =
         useState<ReactFlowInstance | null>(null);
       const [isLargeDiagram, setIsLargeDiagram] = useState(false);
+      const [focusedNodeIndex, setFocusedNodeIndex] = useState(0);
+      const diagramRef = useRef<HTMLDivElement>(null);
+      const rovingTabindexRef = useRef<RovingTabindexManager | null>(null);
 
       // Convert DiagramData to React Flow format with performance optimizations
       const { nodes, edges } = useMemo(() => {
@@ -165,8 +179,14 @@ export const InteractiveDiagramComponent: React.FC<InteractiveDiagramProps> =
               duration: isLargeDiagram ? 0 : 800,
             });
           }, delay);
+
+          // Announce diagram ready to screen readers
+          announceToScreenReader(
+            `Interactive diagram loaded with ${diagramData.nodes.length} nodes and ${diagramData.edges.length} connections. Use Tab to navigate between elements.`,
+            "polite"
+          );
         },
-        [isLargeDiagram]
+        [isLargeDiagram, diagramData.nodes.length, diagramData.edges.length]
       );
 
       // Handle fit view when diagram data changes with performance considerations
@@ -181,6 +201,63 @@ export const InteractiveDiagramComponent: React.FC<InteractiveDiagramProps> =
           }, delay);
         }
       }, [diagramData, reactFlowInstance, isLargeDiagram]);
+
+      // Setup keyboard navigation for diagram elements
+      useEffect(() => {
+        if (!diagramRef.current || diagramData.nodes.length === 0) return;
+
+        // Setup roving tabindex for nodes
+        rovingTabindexRef.current = new RovingTabindexManager(
+          diagramRef.current,
+          '[data-id^="node-"]',
+          { vertical: true, horizontal: true, wrap: true }
+        );
+
+        return () => {
+          rovingTabindexRef.current?.destroy();
+        };
+      }, [diagramData.nodes]);
+
+      // Handle keyboard shortcuts for diagram
+      const handleDiagramKeyDown = useCallback(
+        (event: React.KeyboardEvent) => {
+          switch (event.key) {
+            case "f":
+            case "F":
+              if (event.ctrlKey || event.metaKey) {
+                event.preventDefault();
+                reactFlowInstance?.fitView({ duration: 800 });
+                announceToScreenReader("Diagram fitted to view", "polite");
+              }
+              break;
+            case "+":
+            case "=":
+              if (event.ctrlKey || event.metaKey) {
+                event.preventDefault();
+                reactFlowInstance?.zoomIn();
+                announceToScreenReader("Zoomed in", "polite");
+              }
+              break;
+            case "-":
+              if (event.ctrlKey || event.metaKey) {
+                event.preventDefault();
+                reactFlowInstance?.zoomOut();
+                announceToScreenReader("Zoomed out", "polite");
+              }
+              break;
+            case "Enter":
+            case " ":
+              // Handle node/edge activation
+              const activeElement = document.activeElement as HTMLElement;
+              if (activeElement?.getAttribute("data-id")?.startsWith("node-")) {
+                event.preventDefault();
+                activeElement.click();
+              }
+              break;
+          }
+        },
+        [reactFlowInstance]
+      );
 
       // Loading state
       if (isLoading) {
@@ -232,11 +309,28 @@ export const InteractiveDiagramComponent: React.FC<InteractiveDiagramProps> =
 
       return (
         <div
+          ref={diagramRef}
           className={`h-96 bg-white rounded-lg border border-gray-200 ${className}`}
+          role="application"
+          aria-label={`Interactive code diagram with ${diagramData.nodes.length} nodes and ${diagramData.edges.length} connections`}
+          aria-describedby="diagram-instructions"
+          onKeyDown={handleDiagramKeyDown}
+          tabIndex={0}
         >
+          {/* Screen reader instructions */}
+          <div id="diagram-instructions" className="sr-only">
+            Use Tab to navigate between diagram elements. Press Enter or Space
+            to interact with elements. Use Ctrl+F to fit diagram to view,
+            Ctrl+Plus to zoom in, Ctrl+Minus to zoom out. Arrow keys navigate
+            between connected elements.
+          </div>
+
           {/* Performance warning for large diagrams */}
           {isLargeDiagram && (
-            <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2 text-sm text-yellow-800">
+            <div
+              className="bg-yellow-50 border-b border-yellow-200 px-4 py-2 text-sm text-yellow-800"
+              role="status"
+            >
               Large diagram detected ({diagramData.nodes.length} nodes) - some
               features disabled for better performance
             </div>
@@ -267,11 +361,14 @@ export const InteractiveDiagramComponent: React.FC<InteractiveDiagramProps> =
               zoomOnScroll={true}
               zoomOnPinch={true}
               zoomOnDoubleClick={!isLargeDiagram}
+              // Accessibility
+              aria-label="Interactive diagram canvas"
             >
               <Controls
                 position="top-right"
                 showInteractive={false}
                 className="bg-white border border-gray-200 rounded-md shadow-sm"
+                aria-label="Diagram controls"
               />
               {/* Only show MiniMap for smaller diagrams to improve performance */}
               {!isLargeDiagram && (

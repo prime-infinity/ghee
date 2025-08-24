@@ -1,5 +1,6 @@
 import React from "react";
 import { Code, Github, HelpCircle } from "lucide-react";
+import { AccessibilityMenu } from "./accessibility/AccessibilityMenu";
 
 /**
  * Props for Layout component
@@ -14,13 +15,25 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip to main content link */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
       {/* Navigation Header */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav
+        className="bg-white shadow-sm border-b border-gray-200"
+        role="navigation"
+        aria-label="Main navigation"
+      >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo and Title */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
+              <div
+                className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg"
+                aria-hidden="true"
+              >
                 <Code className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -30,22 +43,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             {/* Navigation Links */}
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-6" role="menubar">
               <a
                 href="#visualizer"
-                className="text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                role="menuitem"
               >
                 Visualizer
               </a>
               <a
                 href="#examples"
-                className="text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                role="menuitem"
               >
                 Examples
               </a>
               <a
                 href="#help"
-                className="text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                role="menuitem"
               >
                 Help
               </a>
@@ -53,9 +69,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
+              <AccessibilityMenu />
               <button
-                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="p-2 text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                 title="Help"
+                aria-label="Help and documentation"
               >
                 <HelpCircle className="w-5 h-5" />
               </button>
@@ -63,8 +81,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 href="https://github.com/your-repo/ghee"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="p-2 text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                 title="View on GitHub"
+                aria-label="View source code on GitHub (opens in new tab)"
               >
                 <Github className="w-5 h-5" />
               </a>
@@ -74,10 +93,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1" role="main">
+        {children}
+      </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-16">
+      <footer
+        className="bg-white border-t border-gray-200 mt-16"
+        role="contentinfo"
+      >
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* About */}

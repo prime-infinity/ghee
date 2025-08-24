@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type { VisualEdge } from "../../types/visualization";
 import { ExplanationService } from "../../services/ExplanationService";
+import { trapFocus } from "../../utils/keyboardNavigation";
 
 /**
  * Props for the EdgeDetailsModal component
@@ -46,22 +47,33 @@ export const EdgeDetailsModal: React.FC<EdgeDetailsModalProps> = ({
     }
   };
 
-  // Handle escape key
+  // Handle escape key and focus trapping
   React.useEffect(() => {
+    if (!isOpen) return;
+
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
       }
     };
 
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-      document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleEscape);
+    document.body.style.overflow = "hidden";
+
+    // Trap focus within modal
+    const modalElement = document.querySelector(
+      '[role="dialog"]'
+    ) as HTMLElement;
+    let cleanupFocusTrap: (() => void) | undefined;
+
+    if (modalElement) {
+      cleanupFocusTrap = trapFocus(modalElement);
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "unset";
+      cleanupFocusTrap?.();
     };
   }, [isOpen, onClose]);
 
@@ -116,6 +128,10 @@ export const EdgeDetailsModal: React.FC<EdgeDetailsModalProps> = ({
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edge-modal-title"
+      aria-describedby="edge-modal-description"
     >
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
         {/* Header */}
@@ -128,7 +144,12 @@ export const EdgeDetailsModal: React.FC<EdgeDetailsModalProps> = ({
               <TypeIcon size={24} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">{label}</h2>
+              <h2
+                id="edge-modal-title"
+                className="text-lg font-semibold text-gray-900"
+              >
+                {label}
+              </h2>
               <p className="text-sm text-gray-500 capitalize">
                 {type.replace("-", " ")}
               </p>
@@ -136,7 +157,7 @@ export const EdgeDetailsModal: React.FC<EdgeDetailsModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Close modal"
           >
             <X size={20} className="text-gray-500" />
@@ -144,7 +165,7 @@ export const EdgeDetailsModal: React.FC<EdgeDetailsModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
+        <div id="edge-modal-description" className="p-6 space-y-4">
           {/* Connection Type Badge */}
           <div>
             <h3 className="text-sm font-medium text-gray-900 mb-2">
@@ -249,7 +270,7 @@ export const EdgeDetailsModal: React.FC<EdgeDetailsModalProps> = ({
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
           <button
             onClick={onClose}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             Got it!
           </button>

@@ -57,7 +57,7 @@ export const CustomNode: React.FC<NodeProps<CustomNodeData>> = ({
       hideDelay={100}
     >
       <button
-        className="relative cursor-pointer transition-all duration-200 hover:shadow-md group border-0 p-0 bg-transparent"
+        className="relative cursor-pointer transition-all duration-200 hover:shadow-md group border-0 p-0 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         style={{
           ...nodeStyle,
           ...selectedStyle,
@@ -71,6 +71,11 @@ export const CustomNode: React.FC<NodeProps<CustomNodeData>> = ({
         }}
         onClick={handleClick}
         aria-label={`${label}: ${nodeExplanation.simple}`}
+        aria-describedby={`node-${visualNode.id}-description`}
+        aria-pressed={selected}
+        role="button"
+        tabIndex={0}
+        data-id={`node-${visualNode.id}`}
       >
         {/* Input Handle */}
         <Handle
@@ -108,6 +113,16 @@ export const CustomNode: React.FC<NodeProps<CustomNodeData>> = ({
           className="w-3 h-3 border-2 border-gray-400 bg-white"
           style={{ bottom: -6 }}
         />
+
+        {/* Hidden description for screen readers */}
+        <div id={`node-${visualNode.id}-description`} className="sr-only">
+          {nodeExplanation.detailed || nodeExplanation.simple}
+          {visualNode.metadata.patternType &&
+            ` This is part of a ${visualNode.metadata.patternType.replace(
+              "-",
+              " "
+            )} pattern.`}
+        </div>
       </button>
     </Tooltip>
   );

@@ -5,7 +5,8 @@ import { Layout } from "./components/Layout";
 import { CodeInputComponent } from "./components/CodeInputComponent";
 import { InteractiveDiagramComponent } from "./components/InteractiveDiagramComponent";
 import { ProgressiveLoadingIndicator } from "./components/ProgressiveLoadingIndicator";
-import { ErrorList, WarningDisplay } from "./components/ErrorDisplay";
+import { ErrorList } from "./components/ErrorDisplay";
+import { AccessibilityProvider } from "./components/accessibility/AccessibilityProvider";
 import {
   CodeVisualizationService,
   type ProcessingStage,
@@ -297,9 +298,11 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <ErrorBoundary>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
+      <AccessibilityProvider>
+        <AppProvider>
+          <AppContent />
+        </AppProvider>
+      </AccessibilityProvider>
     </ErrorBoundary>
   );
 }
