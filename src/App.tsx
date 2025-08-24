@@ -1,15 +1,20 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { AppProvider, useAppContext } from "./contexts/AppContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Layout } from "./components/Layout";
 import { CodeInputComponent } from "./components/CodeInputComponent";
 import { InteractiveDiagramComponent } from "./components/InteractiveDiagramComponent";
+import { ProgressiveLoadingIndicator } from "./components/ProgressiveLoadingIndicator";
 import { ErrorList, WarningDisplay } from "./components/ErrorDisplay";
 import {
   CodeVisualizationService,
   type ProcessingStage,
 } from "./services/CodeVisualizationService";
 import type { VisualNode, VisualEdge } from "./types";
+import type {
+  CodeComplexityMetrics,
+  PerformanceMetrics,
+} from "./services/PerformanceService";
 
 /**
  * Main application content component
@@ -21,29 +26,60 @@ const AppContent: React.FC = () => {
     []
   );
 
+  // Additional state for performance monitoring
+  const [complexity, setComplexity] = useState<CodeComplexityMetrics | null>(
+    null
+  );
+  const [performanceMetrics, setPerformanceMetrics] =
+    useState<PerformanceMetrics | null>(null);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [processingWarnings, setProcessingWarnings] = useState<string[]>([]);
+
   /**
    * Handle code submission for visualization
    */
   const handleCodeSubmit = useCallback(
     async (code: string) => {
+      // Analyze complexity before processing
+      const codeComplexity = visualizationService.analyzeCodeComplexity(code);
+      setComplexity(codeComplexity);
+
+      // Check if code should be processed
+      const complexityCheck = visualizationService
+        .getPerformanceService()
+        .shouldProcessCode(codeComplexity);
+      setProcessingWarnings(complexityCheck.warnings);
+
       dispatch({ type: "START_PROCESSING", payload: code });
+      setProcessingProgress(0);
 
       try {
         const result = await visualizationService.visualizeCode(
           code,
-          (stage: ProcessingStage, _progress: number) => {
+          (stage: ProcessingStage, progress: number) => {
             dispatch({ type: "SET_PROCESSING_STAGE", payload: stage });
+            setProcessingProgress(progress);
           }
         );
+
+        // Store performance metrics
+        if (result.performanceMetrics) {
+          setPerformanceMetrics(result.performanceMetrics);
+        }
 
         if (result.success && result.diagramData) {
           dispatch({ type: "SET_DIAGRAM_DATA", payload: result.diagramData });
           dispatch({ type: "PROCESSING_COMPLETE" });
 
-          // Show warnings if fallback was used
+          // Show warnings if fallback was used or optimizations were applied
           if (result.fallbackUsed && result.warnings) {
-            // Store warnings in state for display
             console.warn("Fallback visualization used:", result.warnings);
+          }
+          if (result.optimizations && result.optimizations.length > 0) {
+            console.info(
+              "Diagram optimizations applied:",
+              result.optimizations
+            );
           }
         } else {
           dispatch({ type: "SET_VALIDATION_ERRORS", payload: result.errors });
@@ -67,6 +103,10 @@ const AppContent: React.FC = () => {
           },
         };
         dispatch({ type: "SET_APPLICATION_ERROR", payload: userError });
+      } finally {
+        setProcessingProgress(0);
+        setComplexity(null);
+        setProcessingWarnings([]);
       }
     },
     [visualizationService, dispatch]
@@ -147,32 +187,26 @@ const AppContent: React.FC = () => {
             />
           </section>
 
-          {/* Processing Status */}
+          {/* Progressive Loading Indicator */}
           {state.isProcessing && state.processingStage && (
             <section className="max-w-4xl mx-auto">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                  <div>
-                    <div className="font-medium text-blue-800">
-                      {state.processingStage === "parsing" &&
-                        "Parsing your code..."}
-                      {state.processingStage === "pattern-recognition" &&
-                        "Recognizing patterns..."}
-                      {state.processingStage === "visualization" &&
-                        "Generating visualization..."}
-                    </div>
-                    <div className="text-sm text-blue-600">
-                      {state.processingStage === "parsing" &&
-                        "Converting code into an abstract syntax tree"}
-                      {state.processingStage === "pattern-recognition" &&
-                        "Identifying code patterns and relationships"}
-                      {state.processingStage === "visualization" &&
-                        "Creating interactive diagram"}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ProgressiveLoadingIndicator
+                currentStage={state.processingStage}
+                progress={processingProgress}
+                complexity={complexity || undefined}
+                estimatedTimeRemaining={
+                  complexity && performanceMetrics
+                    ? Math.max(
+                        0,
+                        complexity.estimatedProcessingTime -
+                          (Date.now() - performanceMetrics.startTime)
+                      )
+                    : complexity?.estimatedProcessingTime
+                }
+                canCancel={true}
+                onCancel={handleCancel}
+                warnings={processingWarnings}
+              />
             </section>
           )}
 

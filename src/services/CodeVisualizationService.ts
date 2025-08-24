@@ -5,11 +5,12 @@ import { ASTParserService } from './ASTParserService';
 import { PatternRecognitionEngine } from './PatternRecognitionEngine';
 import { VisualizationGenerator } from './VisualizationGenerator';
 import { ErrorHandlerService } from './ErrorHandlerService';
+import { PerformanceService, type PerformanceMetrics, type CodeComplexityMetrics } from './PerformanceService';
 
 /**
  * Processing stages for user feedback
  */
-export type ProcessingStage = 'parsing' | 'pattern-recognition' | 'visualization';
+export type ProcessingStage = 'parsing' | 'pattern-recognition' | 'visualization' | 'optimization';
 
 /**
  * Progress callback for processing updates
@@ -25,6 +26,8 @@ export interface VisualizationResult {
   errors: UserFriendlyError[];
   warnings?: string[];
   fallbackUsed?: boolean;
+  performanceMetrics?: PerformanceMetrics;
+  optimizations?: string[];
 }
 
 /**
@@ -36,6 +39,7 @@ export class CodeVisualizationService {
   private patternEngine: PatternRecognitionEngine;
   private visualizationGenerator: VisualizationGenerator;
   private errorHandler: ErrorHandlerService;
+  private performanceService: PerformanceService;
   private isProcessing = false;
   private shouldCancel = false;
 
@@ -44,10 +48,11 @@ export class CodeVisualizationService {
     this.patternEngine = new PatternRecognitionEngine();
     this.visualizationGenerator = new VisualizationGenerator();
     this.errorHandler = new ErrorHandlerService();
+    this.performanceService = new PerformanceService();
   }
 
   /**
-   * Convert code into a visual diagram with comprehensive error handling
+   * Convert code into a visual diagram with comprehensive error handling and performance optimization
    */
   async visualizeCode(
     code: string,
@@ -73,17 +78,50 @@ export class CodeVisualizationService {
     this.isProcessing = true;
     this.shouldCancel = false;
     const warnings: string[] = [];
+    const optimizations: string[] = [];
     let fallbackUsed = false;
 
+    // Start performance monitoring
+    const performanceMetrics = this.performanceService.startMonitoring(code);
+    
+    // Check if code should be processed based on complexity
+    const complexityCheck = this.performanceService.shouldProcessCode(performanceMetrics.complexity);
+    if (!complexityCheck.shouldProcess) {
+      this.isProcessing = false;
+      return {
+        success: false,
+        errors: [{
+          code: 'CODE_TOO_COMPLEX',
+          message: 'Code is too complex to process',
+          description: complexityCheck.warnings.join('. '),
+          suggestions: complexityCheck.suggestions,
+          severity: 'high',
+          context: {
+            component: 'CodeVisualizationService',
+            operation: 'complexity-check'
+          }
+        }],
+        performanceMetrics: this.performanceService.endMonitoring() || undefined
+      };
+    }
+    
+    // Add complexity warnings
+    warnings.push(...complexityCheck.warnings);
+
     try {
-      // Stage 1: Parse code into AST with retry mechanism
+      // Stage 1: Parse code into AST with retry mechanism and timeout
       progressCallback?.('parsing', 0);
       if (this.shouldCancel) return this.getCancelledResult();
 
-      const parseResult = await this.errorHandler.retryOperation(
-        () => this.astParser.parseCode(code),
-        { component: 'ASTParserService', operation: 'parseCode' }
+      this.performanceService.recordStageTime('parsing-start');
+      const parseResult = await this.performanceService.createTimeoutPromise(
+        this.errorHandler.retryOperation(
+          () => this.astParser.parseCode(code),
+          { component: 'ASTParserService', operation: 'parseCode' }
+        ),
+        Math.min(performanceMetrics.complexity.estimatedProcessingTime * 0.3, 10000) // 30% of estimated time or 10s max
       );
+      this.performanceService.recordStageTime('parsing-end');
 
       if (parseResult.errors.length > 0 || !parseResult.ast) {
         // Handle parse errors with user-friendly messages
@@ -93,20 +131,26 @@ export class CodeVisualizationService {
         
         return {
           success: false,
-          errors: userFriendlyErrors
+          errors: userFriendlyErrors,
+          performanceMetrics: this.performanceService.endMonitoring() || undefined
         };
       }
 
-      // Stage 2: Recognize patterns with error handling
+      // Stage 2: Recognize patterns with error handling and timeout
       progressCallback?.('pattern-recognition', 33);
       if (this.shouldCancel) return this.getCancelledResult();
 
+      this.performanceService.recordStageTime('pattern-recognition-start');
       let patterns: RecognizedPattern[];
       try {
-        patterns = await this.errorHandler.retryOperation(
-          () => Promise.resolve(this.patternEngine.recognizePatterns(parseResult.ast, code)),
-          { component: 'PatternRecognitionEngine', operation: 'recognizePatterns' }
+        patterns = await this.performanceService.createTimeoutPromise(
+          this.errorHandler.retryOperation(
+            () => Promise.resolve(this.patternEngine.recognizePatterns(parseResult.ast, code)),
+            { component: 'PatternRecognitionEngine', operation: 'recognizePatterns' }
+          ),
+          Math.min(performanceMetrics.complexity.estimatedProcessingTime * 0.4, 15000) // 40% of estimated time or 15s max
         ) as RecognizedPattern[];
+        this.performanceService.recordStageTime('pattern-recognition-end');
       } catch (patternError) {
         // Try fallback visualization for pattern recognition failures
         const fallback = this.errorHandler.createFallbackVisualization(code, ['pattern-recognition']);
@@ -120,7 +164,8 @@ export class CodeVisualizationService {
             diagramData: fallback.diagram,
             errors: [],
             warnings,
-            fallbackUsed
+            fallbackUsed,
+            performanceMetrics: this.performanceService.endMonitoring() || undefined
           };
         }
         
@@ -149,7 +194,8 @@ export class CodeVisualizationService {
             diagramData: fallback.diagram,
             errors: [],
             warnings,
-            fallbackUsed
+            fallbackUsed,
+            performanceMetrics: this.performanceService.endMonitoring() || undefined
           };
         }
         
@@ -174,16 +220,21 @@ export class CodeVisualizationService {
         };
       }
 
-      // Stage 3: Generate visualization with error handling
+      // Stage 3: Generate visualization with error handling and timeout
       progressCallback?.('visualization', 66);
       if (this.shouldCancel) return this.getCancelledResult();
 
+      this.performanceService.recordStageTime('visualization-start');
       let diagramData: DiagramData;
       try {
-        diagramData = await this.errorHandler.retryOperation(
-          () => Promise.resolve(this.visualizationGenerator.generateDiagram(patterns)),
-          { component: 'VisualizationGenerator', operation: 'generateDiagram' }
+        diagramData = await this.performanceService.createTimeoutPromise(
+          this.errorHandler.retryOperation(
+            () => Promise.resolve(this.visualizationGenerator.generateDiagram(patterns)),
+            { component: 'VisualizationGenerator', operation: 'generateDiagram' }
+          ),
+          Math.min(performanceMetrics.complexity.estimatedProcessingTime * 0.3, 10000) // 30% of estimated time or 10s max
         ) as DiagramData;
+        this.performanceService.recordStageTime('visualization-end');
       } catch (visualizationError) {
         // Try simplified diagram for visualization failures
         const vizError: VisualizationError = {
@@ -204,7 +255,8 @@ export class CodeVisualizationService {
             diagramData: simplified.diagram,
             errors: [],
             warnings,
-            fallbackUsed
+            fallbackUsed,
+            performanceMetrics: this.performanceService.endMonitoring() || undefined
           };
         }
         
@@ -220,14 +272,26 @@ export class CodeVisualizationService {
         };
       }
       
-      progressCallback?.('visualization', 100);
+      // Stage 4: Optimize diagram for performance
+      progressCallback?.('optimization', 90);
+      if (this.shouldCancel) return this.getCancelledResult();
+
+      this.performanceService.recordStageTime('optimization-start');
+      const optimizationResult = this.performanceService.optimizeDiagramForRendering(diagramData);
+      diagramData = optimizationResult.optimizedData;
+      optimizations.push(...optimizationResult.optimizations);
+      this.performanceService.recordStageTime('optimization-end');
+
+      progressCallback?.('optimization', 100);
 
       return {
         success: true,
         diagramData,
         errors: [],
         warnings: warnings.length > 0 ? warnings : undefined,
-        fallbackUsed
+        fallbackUsed,
+        performanceMetrics: this.performanceService.endMonitoring() || undefined,
+        optimizations: optimizations.length > 0 ? optimizations : undefined
       };
 
     } catch (error) {
@@ -239,11 +303,13 @@ export class CodeVisualizationService {
       
       return {
         success: false,
-        errors: [userFriendlyError]
+        errors: [userFriendlyError],
+        performanceMetrics: this.performanceService.endMonitoring() || undefined
       };
     } finally {
       this.isProcessing = false;
       this.shouldCancel = false;
+      this.performanceService.cancelTimeout();
     }
   }
 
@@ -252,6 +318,7 @@ export class CodeVisualizationService {
    */
   cancelProcessing(): void {
     this.shouldCancel = true;
+    this.performanceService.cancelTimeout();
   }
 
   /**
@@ -262,64 +329,10 @@ export class CodeVisualizationService {
   }
 
   /**
-   * Analyze code complexity before processing
+   * Analyze code complexity before processing (delegated to PerformanceService)
    */
-  analyzeCodeComplexity(code: string): {
-    complexity: 'simple' | 'medium' | 'complex';
-    metrics: {
-      lines: number;
-      functions: number;
-      variables: number;
-      nestingDepth: number;
-    };
-    warnings: string[];
-  } {
-    const lines = code.split('\n').length;
-    const functions = (code.match(/function\s+\w+|const\s+\w+\s*=\s*\(/g) || []).length;
-    const variables = (code.match(/(?:let|const|var)\s+\w+/g) || []).length;
-    
-    // Estimate nesting depth by counting braces
-    let maxDepth = 0;
-    let currentDepth = 0;
-    for (const char of code) {
-      if (char === '{') {
-        currentDepth++;
-        maxDepth = Math.max(maxDepth, currentDepth);
-      } else if (char === '}') {
-        currentDepth--;
-      }
-    }
-
-    const metrics = {
-      lines,
-      functions,
-      variables,
-      nestingDepth: maxDepth
-    };
-
-    const warnings: string[] = [];
-    let complexity: 'simple' | 'medium' | 'complex' = 'simple';
-
-    // Determine complexity and warnings
-    if (lines > 500) {
-      complexity = 'complex';
-      warnings.push('Large code file may take longer to process');
-    } else if (lines > 100) {
-      complexity = 'medium';
-      warnings.push('Medium-sized code file');
-    }
-
-    if (maxDepth > 5) {
-      complexity = 'complex';
-      warnings.push('Deeply nested code may be simplified in visualization');
-    }
-
-    if (functions > 20) {
-      complexity = 'complex';
-      warnings.push('Many functions detected - some may be grouped in visualization');
-    }
-
-    return { complexity, metrics, warnings };
+  analyzeCodeComplexity(code: string): CodeComplexityMetrics {
+    return this.performanceService.analyzeCodeComplexity(code);
   }
 
   /**
@@ -357,12 +370,9 @@ export class CodeVisualizationService {
 
     // Check code complexity
     const complexity = this.analyzeCodeComplexity(code);
-    warnings.push(...complexity.warnings);
-
-    if (complexity.complexity === 'complex') {
-      suggestions.push('Consider breaking down complex code into smaller parts');
-      suggestions.push('Focus on key functionality for better visualization');
-    }
+    const complexityCheck = this.performanceService.shouldProcessCode(complexity);
+    warnings.push(...complexityCheck.warnings);
+    suggestions.push(...complexityCheck.suggestions);
 
     // Syntax validation
     try {
@@ -418,7 +428,15 @@ export class CodeVisualizationService {
           component: 'CodeVisualizationService',
           operation: 'cancelled'
         }
-      }]
+      }],
+      performanceMetrics: this.performanceService.endMonitoring() || undefined
     };
+  }
+
+  /**
+   * Get performance service instance for advanced configuration
+   */
+  getPerformanceService(): PerformanceService {
+    return this.performanceService;
   }
 }
